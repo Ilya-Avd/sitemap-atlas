@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+src/render/assets.generated.ts
+.preview/
+
+# Ручная фикстура для проверки на объёме, ни один тест её не использует
+test/fixtures/large.xml
+
+# Собранный пакет расширения
+*.vsix

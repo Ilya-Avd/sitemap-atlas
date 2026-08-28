@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest something the tool should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: The task, not the solution — it often has a shorter route.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you had in mind
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Where it belongs
+      options:
+        - label: The library
+        - label: The CLI
+        - label: The HTML report
+        - label: The VS Code extension

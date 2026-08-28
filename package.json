@@ -1,0 +1,73 @@
+{
+  "name": "sitemap-atlas",
+  "version": "0.1.0",
+  "description": "Turn any sitemap.xml into an interactive tree — self-contained HTML, Mermaid or terminal output. Runs fully offline.",
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "bin": {
+    "sitemap-atlas": "./dist/cli.js"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "build:assets": "node scripts/build-assets.mjs",
+    "build": "npm run build:assets && tsup",
+    "dev": "npm run build:assets && tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src scripts test eslint.config.js",
+    "lint:fix": "eslint src scripts test eslint.config.js --fix",
+    "format": "prettier --write \"{src,test,scripts}/**/*.{ts,js,css,json}\"",
+    "prepublishOnly": "npm run lint && npm test && npm run build",
+    "prepare": "npm run build:assets",
+    "pretest": "npm run build",
+    "test:all": "npm test && npm --prefix vscode-extension test"
+  },
+  "keywords": [
+    "sitemap",
+    "sitemap.xml",
+    "visualization",
+    "visualize",
+    "tree",
+    "seo",
+    "site-structure",
+    "cli",
+    "mermaid"
+  ],
+  "license": "MIT",
+  "author": "Ilya (https://github.com/Ilya-Avd)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ilya-Avd/sitemap-atlas.git"
+  },
+  "homepage": "https://github.com/Ilya-Avd/sitemap-atlas#readme",
+  "bugs": "https://github.com/Ilya-Avd/sitemap-atlas/issues",
+  "sideEffects": false,
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.18.0",
+    "vitest": "^4.1.11"
+  }
+}

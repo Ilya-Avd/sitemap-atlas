@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Sitemap Atlas extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/vscode-extension",
+        "${workspaceFolder}/test/fixtures"
+      ],
+      "outFiles": ["${workspaceFolder}/vscode-extension/dist/**/*.js"],
+      "preLaunchTask": "build extension"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+name: Bug report
+description: Something read, parsed or rendered wrongly
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, and what came out.
+      placeholder: |
+        $ sitemap-atlas https://example.com -o out.html
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+  - type: textarea
+    id: sitemap
+    attributes:
+      label: The sitemap
+      description: >
+        A link, or a reduced copy with the same shape. The tree only cares about
+        hosts and path segments, so you can replace real URLs.
+      render: xml
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `sitemap-atlas --version`, or the extension version.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Node and OS
+      placeholder: node 22.11 on Windows 11

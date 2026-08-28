@@ -1,0 +1,134 @@
+{
+  "name": "sitemap-atlas-vscode",
+  "displayName": "Sitemap Atlas",
+  "description": "Open any sitemap.xml as an interactive tree, right in the editor. Runs locally.",
+  "version": "0.1.0",
+  "publisher": "ilya-avd",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "sitemap",
+    "sitemap.xml",
+    "seo",
+    "tree",
+    "visualization"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ilya-Avd/sitemap-atlas.git",
+    "directory": "vscode-extension"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "sitemapAtlas.preview",
+        "title": "Open Sitemap Tree",
+        "category": "Sitemap",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "sitemapAtlas.previewFromUrl",
+        "title": "Open Sitemap Tree from URL…",
+        "category": "Sitemap"
+      },
+      {
+        "command": "sitemapAtlas.export",
+        "title": "Export Sitemap Tree as HTML…",
+        "category": "Sitemap"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "sitemapAtlas.preview",
+          "when": "resourceExtname == .xml",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "sitemapAtlas.preview",
+          "when": "resourceExtname == .xml",
+          "group": "navigation@30"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "sitemapAtlas.preview",
+          "when": "resourceExtname == .xml"
+        },
+        {
+          "command": "sitemapAtlas.export",
+          "when": "resourceExtname == .xml"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Sitemap Atlas",
+      "properties": {
+        "sitemapAtlas.allowNetwork": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Allow following `<sitemapindex>` children over the network. When off, nested sitemaps only resolve to files sitting next to the index."
+        },
+        "sitemapAtlas.followIndexes": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Descend into the children of a `<sitemapindex>`."
+        },
+        "sitemapAtlas.collapseChains": {
+          "type": "boolean",
+          "default": false,
+          "description": "Merge single-child folder chains into one node, e.g. 2024/01/15."
+        },
+        "sitemapAtlas.maxDepth": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "Fold everything below this depth. 0 means unlimited."
+        },
+        "sitemapAtlas.sortBy": {
+          "type": "string",
+          "default": "name",
+          "enum": [
+            "name",
+            "count",
+            "lastmod"
+          ],
+          "description": "How children are ordered."
+        },
+        "sitemapAtlas.refreshOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Re-render the panel when the sitemap file is saved."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "npm run build:core && tsup && node scripts/notices.mjs",
+    "build:core": "cd .. && npm run build:assets",
+    "watch": "tsup --watch",
+    "package": "npm run build && npx @vscode/vsce package --no-dependencies",
+    "test": "npm run build && node test/smoke.mjs",
+    "publish": "npm run build && npx @vscode/vsce publish --no-dependencies",
+    "publish:openvsx": "npm run build && npx ovsx publish --no-dependencies",
+    "install:local": "npm run package && code --install-extension sitemap-atlas-vscode-0.1.0.vsix --force",
+    "icon": "node scripts/make-icon.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/vscode": "^1.85.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0"
+  },
+  "icon": "icon.png"
+}

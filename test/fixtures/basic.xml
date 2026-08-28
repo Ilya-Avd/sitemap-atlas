@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://example.com/</loc>
+    <lastmod>2026-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://example.com/about</loc>
+    <lastmod>2025-11-02T10:30:00+00:00</lastmod>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="de" href="https://example.com/de/about"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://example.com/fr/about"/>
+  </url>
+  <url>
+    <loc>https://example.com/blog/2026/hello-world</loc>
+    <lastmod>2026-02-01</lastmod>
+    <changefreq>never</changefreq>
+  </url>
+  <url>
+    <loc>https://example.com/blog/2026/second-post</loc>
+  </url>
+  <url>
+    <loc>https://example.com/blog/2025/older</loc>
+  </url>
+  <url>
+    <loc>https://example.com/shop/item?id=42</loc>
+    <priority>7</priority>
+  </url>
+  <url>
+    <loc>not a url at all</loc>
+  </url>
+</urlset>
