@@ -36,18 +36,26 @@
     "prepublishOnly": "npm run lint && npm test && npm run build",
     "prepare": "npm run build:assets",
     "pretest": "npm run build",
-    "test:all": "npm test && npm --prefix vscode-extension test"
+    "test:all": "npm test && npm test -w sitemap-atlas-vscode",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "sitemap",
     "sitemap.xml",
-    "visualization",
-    "visualize",
-    "tree",
-    "seo",
+    "xml-sitemap",
+    "sitemapindex",
+    "sitemap-parser",
+    "sitemap-viewer",
+    "sitemap-visualizer",
     "site-structure",
-    "cli",
-    "mermaid"
+    "information-architecture",
+    "seo",
+    "seo-audit",
+    "robots-txt",
+    "tree",
+    "visualization",
+    "mermaid",
+    "cli"
   ],
   "license": "MIT",
   "author": "Ilya (https://github.com/Ilya-Avd)",
@@ -69,5 +77,8 @@
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.18.0",
     "vitest": "^4.1.11"
-  }
+  },
+  "workspaces": [
+    "vscode-extension"
+  ]
 }

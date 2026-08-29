@@ -63,21 +63,24 @@ Node 18.17 or newer, and **no dependencies** — the sitemap parser is part of t
 ```
 sitemap-atlas <file|url|-> [options]
 
+Options
   -o, --out <file>       Write here. The extension picks the format.
-  -f, --format <fmt>     html | text | mermaid | json
+  -f, --format <fmt>     html | text | mermaid | json  (default: text, or html with -o *.html)
       --open             Open the result in the default browser
-      --depth <n>        Collapse everything below this depth
+      --depth <n>        Collapse everything below this depth (mermaid defaults to 4)
       --collapse         Merge single-child folder chains (2024/01/15)
       --sort <key>       name | count | lastmod          (default: name)
       --order <dir>      asc | desc
       --limit <n>        Stop after N URLs
       --no-follow        Do not descend into <sitemapindex> children
       --no-discover      Do not look up a site URL in robots.txt / common paths
-      --offline          Never touch the network
-      --timeout <ms>     Per-request timeout             (default: 20000)
+      --offline          Never touch the network; resolve children to sibling files
+      --timeout <ms>     Per-request timeout                (default: 20000)
       --user-agent <ua>  User-Agent for network reads
       --no-color         Plain text output
   -q, --quiet            Suppress progress on stderr
+  -h, --help             Show this help
+  -v, --version          Show the version
 ```
 
 With no `-o` it prints the tree to stdout, so it composes:
@@ -122,7 +125,11 @@ await fs.writeFile('report.html', renderHtml(tree, stats, { source: './sitemap.x
 
 - `loadSitemap(input, options?)` — reads a URL, a file path, or a raw XML string, following nested
   indexes. Returns `{ entries, sources, refs, errors }`.
-- `discoverSitemaps(siteUrl, read)` — the sitemaps a site advertises, via robots.txt then probing.
+- `discover(siteUrl, read)` — the sitemaps a site advertises, via `robots.txt` then probing.
+  Returns `{ found, skipped }`; `skipped` says which advertised sitemaps were left alone and why.
+- `discoverSitemaps(siteUrl, read)` — the same, when only the locations matter.
+- `parseRobots(text)` / `looksLikeSitemap(xml)` / `sameSite(origin, target)` — the pieces discovery
+  is built from, exported because they are useful on their own.
 - `parseSitemap(xml, source?)` — one document, synchronously. Returns `{ kind, entries, refs }`.
 - `buildTree(entries, options?)` — groups entries by host, then branches on path segments.
 - `summarize(tree)` — URL and folder counts, depth, hosts, `lastmod` window, media counts.

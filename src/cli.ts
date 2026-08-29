@@ -124,6 +124,11 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
+  if (positionals.length > 1) {
+    // Quietly reading the first and dropping the rest is the worst outcome:
+    // the user believes both were included.
+    fail(`expected one input, got ${positionals.length}: ${positionals.join(', ')}`);
+  }
 
   const out = values.out;
   const format: Format = (values.format ??
@@ -199,7 +204,14 @@ async function main(): Promise<void> {
   if (target) {
     const path = resolve(target);
     await mkdir(dirname(path), { recursive: true });
-    await writeFile(path, body, 'utf8');
+    try {
+      await writeFile(path, body, 'utf8');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'EISDIR') {
+        fail(`--out ${target} is a directory; give a file name`);
+      }
+      throw error;
+    }
     if (!values.quiet) {
       const size = (Buffer.byteLength(body) / 1024).toFixed(0);
       process.stderr.write(`${path}  (${stats.urls.toLocaleString('en-US')} URLs, ${size} KB)\n`);

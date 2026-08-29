@@ -103,7 +103,38 @@ describe('cli', () => {
     expect(runFailing([workdir])).toMatch(/is a directory/);
   });
 
+  it('refuses a second input instead of silently dropping it', () => {
+    expect(runFailing([fixture('basic.xml'), fixture('part-a.xml')])).toMatch(
+      /expected one input, got 2/,
+    );
+  });
+
+  it('says so when --out names a directory', () => {
+    expect(runFailing([fixture('basic.xml'), '-o', workdir])).toMatch(/is a directory/);
+  });
+
   it('exits with the help text when given no input', () => {
     expect(runFailing([])).toContain('Usage');
+  });
+});
+
+describe('the README keeps up with the CLI', () => {
+  const readme = readFileSync(fileURLToPath(new URL('../README.md', import.meta.url)), 'utf8');
+
+  it('quotes the current option list verbatim', () => {
+    // Drift between the two is invisible in review and misleads readers, so it
+    // is checked rather than remembered.
+    const help = run(['--help']);
+    const options = help.slice(help.indexOf('Options'), help.indexOf('\nExamples')).trimEnd();
+    expect(readme).toContain(options);
+  });
+
+  it('documents every exported function', async () => {
+    const api = await import('../src/index.js');
+    const functions = Object.entries(api)
+      .filter(([, value]) => typeof value === 'function')
+      .map(([name]) => name);
+    const undocumented = functions.filter((name) => !readme.includes(`\`${name}(`));
+    expect(undocumented).toEqual([]);
   });
 });

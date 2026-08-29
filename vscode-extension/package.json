@@ -16,8 +16,13 @@
     "sitemap",
     "sitemap.xml",
     "seo",
+    "xml",
     "tree",
-    "visualization"
+    "visualization",
+    "viewer",
+    "preview",
+    "site-structure",
+    "robots.txt"
   ],
   "repository": {
     "type": "git",
@@ -125,10 +130,7 @@
     "icon": "node scripts/make-icon.mjs"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "@types/vscode": "^1.85.0",
-    "tsup": "^8.3.0",
-    "typescript": "^5.7.0"
+    "@types/vscode": "^1.85.0"
   },
   "icon": "icon.png"
 }

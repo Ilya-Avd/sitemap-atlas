@@ -236,7 +236,7 @@ export async function loadSitemap(input: string, options: LoadOptions = {}): Pro
     for (const child of node.children) flatten(child);
   };
   for (const root of roots) flatten(root);
-  errors.push(...errorsFromDiscovery);
+  for (const error of errorsFromDiscovery) errors.push(error);
 
   // The root failing is fatal: there is nothing to show and nothing to salvage.
   if (!sources.length && errors.length) {

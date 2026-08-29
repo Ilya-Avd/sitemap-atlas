@@ -16,7 +16,9 @@ First release.
   nested `<sitemapindex>` documents up to three levels deep.
 - Sitemap discovery: given a bare site address, the sitemaps are looked up in
   `robots.txt` and then at the conventional paths. Every sitemap `robots.txt`
-  lists is merged.
+  lists is merged. Relative `Sitemap:` lines are resolved against the site, and
+  a sitemap advertised on an unrelated host is reported rather than fetched —
+  `robots.txt` is content, not instruction.
 - Gzip is detected by content rather than by file name, so a `.xml.gz` and a
   gzipped response both work.
 - A downloaded index resolves its children to the sibling files next to it,

@@ -10,11 +10,11 @@ npm test
 npm run lint
 ```
 
-The VS Code extension lives in its own workspace:
+The VS Code extension is an npm workspace of this package, so the install above
+covers it too — there is no second `node_modules`:
 
 ```bash
-npm --prefix vscode-extension install
-npm --prefix vscode-extension test
+npm test -w sitemap-atlas-vscode
 ```
 
 Press <kbd>F5</kbd> with the repository root open in VS Code to launch an
@@ -39,7 +39,7 @@ than depending on the published package, so the two cannot drift apart.
 ## Before opening a pull request
 
 - `npm run lint && npm test && npm run build` from the root.
-- `npm --prefix vscode-extension test` if you touched the extension.
+- `npm test -w sitemap-atlas-vscode` if you touched the extension.
 - Add a test. Parser and tree changes are cheap to cover; if you fix a crash,
   a regression test that fails without your change is the ask.
 - Keep the package at zero runtime dependencies. That is a feature, not an

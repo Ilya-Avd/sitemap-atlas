@@ -53,11 +53,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # One install covers both: the extension is a workspace of the root.
       - run: npm ci
-      - run: npm ci
-        working-directory: vscode-extension
-      - run: npm test
-        working-directory: vscode-extension
+      - run: npm test -w sitemap-atlas-vscode
       - name: Package the extension
         run: npx --yes @vscode/vsce package --no-dependencies --out sitemap-atlas.vsix
         working-directory: vscode-extension

@@ -43,13 +43,16 @@ because you typed the URL.
 
 ## Development
 
+This folder is an npm workspace of the parent package: install once at the
+repository root, then
+
 ```bash
-npm install
 npm run build     # bundles the extension with the sitemap-atlas core
 npm test          # builds, then drives the commands against a stub vscode module
 ```
 
-Press <kbd>F5</kbd> in this folder to launch an Extension Development Host.
+Press <kbd>F5</kbd> with the repository root open in VS Code to launch an
+Extension Development Host.
 
 The tree, the parser and the viewer all come from the [`sitemap-atlas`](../README.md) package in the
 parent folder; the extension bundles it from source, so the two never drift apart.

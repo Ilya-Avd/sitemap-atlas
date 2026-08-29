@@ -135,6 +135,18 @@ describe('discover guards', () => {
     ]);
   });
 
+  it('skips a Sitemap: line that will not parse as a URL', async () => {
+    const read = async (url: string): Promise<string> => {
+      if (url.endsWith('/robots.txt')) {
+        return ['Sitemap: http://[', 'Sitemap: https://e.com/ok.xml'].join('\n');
+      }
+      throw new Error('HTTP 404');
+    };
+    const result = await discover('https://e.com', read);
+    expect(result.skipped).toEqual([{ loc: 'http://[', reason: 'not a URL' }]);
+    expect(result.found).toEqual([{ loc: 'https://e.com/ok.xml' }]);
+  });
+
   it('skips a Sitemap: line that is not http(s)', async () => {
     const read = async (url: string): Promise<string> => {
       if (url.endsWith('/robots.txt')) return 'Sitemap: file:///etc/passwd';
