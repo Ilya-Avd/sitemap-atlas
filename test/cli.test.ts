@@ -185,12 +185,23 @@ describe('cli comparison and new formats', () => {
 describe('the README keeps up with the CLI', () => {
   const readme = readFileSync(fileURLToPath(new URL('../README.md', import.meta.url)), 'utf8');
 
-  it('quotes the current option list verbatim', () => {
-    // Drift between the two is invisible in review and misleads readers, so it
-    // is checked rather than remembered.
+  it('documents every option the CLI accepts', () => {
+    // Checked by flag rather than by quoting --help verbatim, so the README is
+    // free to lay them out as a table while drift still fails the build.
     const help = run(['--help']);
-    const options = help.slice(help.indexOf('Options'), help.indexOf('\nExamples')).trimEnd();
-    expect(readme).toContain(options);
+    const options = help.slice(help.indexOf('Options'), help.indexOf('\nExamples'));
+    const flags = [...options.matchAll(/(?:^|\s)(--[a-z-]+)/g)].map((m) => m[1] as string);
+    expect(flags.length).toBeGreaterThan(15);
+    expect(flags.filter((flag) => !readme.includes(flag))).toEqual([]);
+  });
+
+  it('mentions no option the CLI does not have', () => {
+    const help = run(['--help']);
+    const known = new Set([...help.matchAll(/(--[a-z-]+)/g)].map((m) => m[1] as string));
+    // Only the option table is scanned; prose elsewhere may mention anything.
+    const table = readme.slice(readme.indexOf('| Option |'), readme.indexOf('## Library'));
+    const claimed = [...new Set([...table.matchAll(/`(--[a-z-]+)/g)].map((m) => m[1] as string))];
+    expect(claimed.filter((flag) => !known.has(flag))).toEqual([]);
   });
 
   it('documents every exported function', async () => {

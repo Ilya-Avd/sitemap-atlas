@@ -31,6 +31,12 @@ export interface LoadOptions {
   discover?: boolean;
   /** Accept a plain list of URLs where a sitemap was expected. Default `true`. */
   urlLists?: boolean;
+  /**
+   * Treat `input` as the document itself, never as a place to read from. Set
+   * it for anything piped in: a single line of stdin that happens to be a URL
+   * is content, and fetching it would be a request the caller never asked for.
+   */
+  content?: boolean;
   /** Called with the sitemaps discovery turned up, before they are read. */
   onDiscover?: (found: string[]) => void;
 }
@@ -118,6 +124,7 @@ export async function loadSitemap(input: string, options: LoadOptions = {}): Pro
     offline = false,
     discover = true,
     urlLists = true,
+    content = false,
   } = options;
 
   // Without this, an empty string falls through to the path branch and resolves
@@ -210,7 +217,8 @@ export async function loadSitemap(input: string, options: LoadOptions = {}): Pro
   };
 
   // Content handed in directly, rather than a place to read it from.
-  const inline = looksLikeXml(input) || (urlLists && looksLikeUrlList(input) && !isUrl(input));
+  const inline =
+    content || looksLikeXml(input) || (urlLists && looksLikeUrlList(input) && !isUrl(input));
   const rootSource = inline ? '<inline>' : isUrl(input) ? input : resolve(input);
   let roots: Node[] = [await walk(rootSource, inline ? input : undefined, 0)];
 

@@ -177,6 +177,7 @@ async function main(): Promise<void> {
   const sitemap = await loadSitemap(source, {
     follow,
     discover,
+    content: input === '-',
     offline: values.offline,
     maxUrls: toInt(values.limit, 'limit'),
     timeout: toInt(values.timeout, 'timeout'),

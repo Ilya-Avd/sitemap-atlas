@@ -237,3 +237,30 @@ describe('loadSitemap discovery errors', () => {
     ]);
   });
 });
+
+describe('loadSitemap content mode', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('never fetches what was handed to it as content', async () => {
+    const fetcher = vi.fn();
+    vi.stubGlobal('fetch', fetcher);
+    // A single line piped in is a one-URL list, not an address to go and read.
+    const sitemap = await loadSitemap('https://e.com/a', { content: true });
+    expect(sitemap.entries.map((e) => e.loc)).toEqual(['https://e.com/a']);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('still fetches the same string when it is given as a location', async () => {
+    const fetcher = vi.fn(
+      async () =>
+        new Response(
+          '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://e.com/x</loc></url></urlset>',
+          { status: 200 },
+        ),
+    );
+    vi.stubGlobal('fetch', fetcher);
+    const sitemap = await loadSitemap('https://e.com/sitemap.xml');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(sitemap.entries.map((e) => e.loc)).toEqual(['https://e.com/x']);
+  });
+});
