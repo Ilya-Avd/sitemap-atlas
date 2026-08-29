@@ -11,3 +11,4 @@ test/fixtures/large.xml
 
 # Собранный пакет расширения
 *.vsix
+coverage/

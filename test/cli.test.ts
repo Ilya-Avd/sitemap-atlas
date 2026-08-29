@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -87,6 +87,22 @@ describe('cli', () => {
     expect(out).toContain('checkout');
   });
 
+  // These are documented in --help, and node:util has no --no-x negation of
+  // its own: without explicit handling every one of them is an unknown option.
+  it('accepts the negative flags and acts on them', () => {
+    expect(run([fixture('basic.xml'), '--no-color'])).toContain('example.com');
+
+    const index = fixture('index.xml');
+    expect(run([index, '--offline'])).toContain('checkout');
+    expect(runFailing([index, '--offline', '--no-follow'])).toMatch(/sitemapindex/);
+  });
+
+  it('lets --no-x win over the positive form', () => {
+    expect(runFailing([fixture('index.xml'), '--offline', '--follow', '--no-follow'])).toMatch(
+      /--no-follow was given/,
+    );
+  });
+
   it('rejects an unknown --sort', () => {
     expect(runFailing([fixture('basic.xml'), '--sort', 'bogus'])).toMatch(/unknown --sort/);
   });
@@ -115,6 +131,54 @@ describe('cli', () => {
 
   it('exits with the help text when given no input', () => {
     expect(runFailing([])).toContain('Usage');
+  });
+});
+
+describe('cli comparison and new formats', () => {
+  const write = (name: string, locs: string[]): string => {
+    const path = join(workdir, name);
+    writeFileSync(
+      path,
+      `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${locs
+        .map((loc) => `<url><loc>${loc}</loc></url>`)
+        .join('')}</urlset>`,
+    );
+    return path;
+  };
+  const before = write('before.xml', ['https://e.com/keep', 'https://e.com/drop']);
+  const after = write('after.xml', ['https://e.com/keep', 'https://e.com/new']);
+
+  it('marks what changed against an earlier sitemap', () => {
+    const out = run([after, '--against', before]);
+    expect(out).toContain('+ new');
+    expect(out).toContain('- drop');
+  });
+
+  it('reads a plain list of URLs', () => {
+    const list = join(workdir, 'urls.txt');
+    writeFileSync(list, ['# my urls', 'https://e.com/docs/a', 'https://e.com/docs/b'].join('\n'));
+    const out = run([list]);
+    expect(out).toContain('docs');
+    expect(out).toContain('2');
+  });
+
+  it('writes csv, with the diff status when there is one', () => {
+    const rows = run([after, '--against', before, '-f', 'csv']).trim().split('\n');
+    expect(rows[0]).toContain('loc,depth');
+    expect(rows.some((r) => r.endsWith(',added'))).toBe(true);
+    expect(rows.some((r) => r.endsWith(',removed'))).toBe(true);
+  });
+
+  it('fails the run when too many URLs disappeared', () => {
+    expect(runFailing([after, '--against', before, '--fail-if-removed', '0'])).toMatch(
+      /over the 0 allowed/,
+    );
+    // Half of two URLs went, so a 50% budget is met exactly and passes.
+    expect(() => run([after, '--against', before, '--fail-if-removed', '50%'])).not.toThrow();
+  });
+
+  it('will not compare against nothing', () => {
+    expect(runFailing([after, '--fail-if-removed', '5'])).toMatch(/needs --against/);
   });
 });
 

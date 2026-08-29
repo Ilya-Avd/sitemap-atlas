@@ -489,3 +489,98 @@ main {
   font-size: 11px;
   word-break: break-all;
 }
+
+/* ---------- diff ---------- */
+
+:root {
+  --added: #2f9e44;
+  --removed: #c92a2a;
+  --changed: #e8590c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --added: #69db7c;
+    --removed: #ff8787;
+    --changed: #ffa94d;
+  }
+}
+
+:root[data-theme='dark'] {
+  --added: #69db7c;
+  --removed: #ff8787;
+  --changed: #ffa94d;
+}
+
+.chip.added {
+  color: var(--added);
+  border-color: var(--added);
+}
+
+.chip.added b,
+.chip.removed b,
+.chip.changed b {
+  color: inherit;
+}
+
+.chip.removed {
+  color: var(--removed);
+  border-color: var(--removed);
+}
+
+.chip.changed {
+  color: var(--changed);
+  border-color: var(--changed);
+}
+
+.row.st-a > .label {
+  color: var(--added);
+}
+
+.row.st-r > .label {
+  color: var(--removed);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.row.st-c > .label {
+  color: var(--changed);
+}
+
+.row.st-a > .dot {
+  color: var(--added) !important;
+}
+
+.row.st-r > .dot {
+  color: var(--removed) !important;
+}
+
+.row.st-c > .dot {
+  color: var(--changed) !important;
+}
+
+.delta {
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.delta .plus {
+  color: var(--added);
+}
+
+.delta .minus {
+  color: var(--removed);
+}
+
+.delta .tilde {
+  color: var(--changed);
+}
+
+.btn[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}

@@ -8,10 +8,12 @@ import { loadSitemap } from './load.js';
 import { buildTree, summarize } from './tree.js';
 import { renderHtml } from './render/html.js';
 import { renderText } from './render/text.js';
+import { renderCsv } from './render/csv.js';
+import { diffSitemaps } from './diff.js';
 import { renderMermaid } from './render/mermaid.js';
 import pkg from '../package.json' with { type: 'json' };
 
-type Format = 'html' | 'text' | 'mermaid' | 'json';
+type Format = 'html' | 'text' | 'mermaid' | 'json' | 'csv';
 
 const HELP = `sitemap-atlas — turn a sitemap.xml into a tree you can actually read
 
@@ -20,7 +22,10 @@ Usage
 
 Options
   -o, --out <file>       Write here. The extension picks the format.
-  -f, --format <fmt>     html | text | mermaid | json  (default: text, or html with -o *.html)
+  -f, --format <fmt>     html | text | mermaid | json | csv  (default: text, or from -o)
+      --against <old>    Compare with an earlier sitemap and show what changed
+      --lastmod          Also treat a changed <lastmod> as a change
+      --fail-if-removed <n>  Exit 1 if more than n URLs (or n%) disappeared
       --open             Open the result in the default browser
       --depth <n>        Collapse everything below this depth (mermaid defaults to 4)
       --collapse         Merge single-child folder chains (2024/01/15)
@@ -44,6 +49,9 @@ Examples
   sitemap-atlas ./sitemap_index.xml --offline --collapse -o site.html
   sitemap-atlas ./sitemap.xml -f mermaid --depth 3 > structure.mmd
   curl -s https://example.com/sitemap.xml | sitemap-atlas -
+  cat urls.txt | sitemap-atlas -                    # a plain URL list works too
+  sitemap-atlas new.xml --against old.xml -o changes.html
+  sitemap-atlas https://example.com --against old.xml --fail-if-removed 5%
 `;
 
 const FORMAT_BY_EXT: Record<string, Format> = {
@@ -53,6 +61,8 @@ const FORMAT_BY_EXT: Record<string, Format> = {
   '.mmd': 'mermaid',
   '.mermaid': 'mermaid',
   '.json': 'json',
+  '.csv': 'csv',
+  '.tsv': 'csv',
   '.txt': 'text',
 };
 
@@ -96,6 +106,9 @@ async function main(): Promise<void> {
     allowPositionals: true,
     options: {
       out: { type: 'string', short: 'o' },
+      against: { type: 'string' },
+      lastmod: { type: 'boolean', default: false },
+      'fail-if-removed': { type: 'string' },
       format: { type: 'string', short: 'f' },
       open: { type: 'boolean', default: false },
       depth: { type: 'string' },
@@ -103,12 +116,17 @@ async function main(): Promise<void> {
       sort: { type: 'string' },
       order: { type: 'string' },
       limit: { type: 'string' },
-      follow: { type: 'boolean', default: true },
-      discover: { type: 'boolean', default: true },
+      // `parseArgs` has no --no-x negation of its own, so each negative flag is
+      // registered in its own right and folded in below.
+      follow: { type: 'boolean' },
+      'no-follow': { type: 'boolean' },
+      discover: { type: 'boolean' },
+      'no-discover': { type: 'boolean' },
       offline: { type: 'boolean', default: false },
       timeout: { type: 'string' },
       'user-agent': { type: 'string' },
-      color: { type: 'boolean', default: true },
+      color: { type: 'boolean' },
+      'no-color': { type: 'boolean' },
       quiet: { type: 'boolean', short: 'q', default: false },
       help: { type: 'boolean', short: 'h', default: false },
       version: { type: 'boolean', short: 'v', default: false },
@@ -130,11 +148,18 @@ async function main(): Promise<void> {
     fail(`expected one input, got ${positionals.length}: ${positionals.join(', ')}`);
   }
 
+  /** `--no-x` wins over `--x`; without either, the default stands. */
+  const flag = (name: 'follow' | 'discover' | 'color', fallback: boolean): boolean =>
+    values[`no-${name}` as const] ? false : (values[name] ?? fallback);
+  const follow = flag('follow', true);
+  const discover = flag('discover', true);
+  const color = flag('color', true);
+
   const out = values.out;
   const format: Format = (values.format ??
     (out ? (FORMAT_BY_EXT[extname(out).toLowerCase()] ?? 'html') : 'text')) as Format;
-  if (!['html', 'text', 'mermaid', 'json'].includes(format)) {
-    fail(`unknown format "${format}" — expected html, text, mermaid or json`);
+  if (!['html', 'text', 'mermaid', 'json', 'csv'].includes(format)) {
+    fail(`unknown format "${format}" — expected html, text, mermaid, json or csv`);
   }
 
   const sortBy = (values.sort ?? 'name') as 'name' | 'count' | 'lastmod';
@@ -150,8 +175,8 @@ async function main(): Promise<void> {
   const source = input === '-' ? await readStdin() : input;
 
   const sitemap = await loadSitemap(source, {
-    follow: values.follow,
-    discover: values.discover,
+    follow,
+    discover,
     offline: values.offline,
     maxUrls: toInt(values.limit, 'limit'),
     timeout: toInt(values.timeout, 'timeout'),
@@ -169,10 +194,39 @@ async function main(): Promise<void> {
   });
 
   if (!sitemap.entries.length) {
-    fail(`no URLs found in ${input === '-' ? 'stdin' : input}`);
+    const where = input === '-' ? 'stdin' : input;
+    // An index read with --no-follow has refs but no URLs; say which it is.
+    fail(
+      !follow && sitemap.refs.length
+        ? `no URLs in ${where}: it is a <sitemapindex> of ${sitemap.refs.length}, and --no-follow was given`
+        : `no URLs found in ${where}`,
+    );
   }
 
-  const tree = buildTree(sitemap.entries, {
+  // The input is the current state; `--against` is what it is measured from.
+  let entries = sitemap.entries;
+  let diff;
+  if (values.against) {
+    const before = await loadSitemap(values.against, {
+      follow,
+      discover,
+      offline: values.offline,
+      timeout: toInt(values.timeout, 'timeout'),
+      userAgent: values['user-agent'],
+    });
+    diff = diffSitemaps(before.entries, sitemap.entries, { lastmod: values.lastmod });
+    entries = diff.entries;
+    if (!values.quiet) {
+      const { added, removed, changed } = diff.summary;
+      process.stderr.write(
+        `  vs ${values.against}: +${added} added, -${removed} removed` +
+          (values.lastmod ? `, ~${changed} changed` : '') +
+          '\n',
+      );
+    }
+  }
+
+  const tree = buildTree(entries, {
     collapse: values.collapse,
     maxDepth: toInt(values.depth, 'depth'),
     sortBy,
@@ -186,14 +240,17 @@ async function main(): Promise<void> {
       source: input === '-' ? 'stdin' : input,
       sourceCount: sitemap.sources.length,
       errors: sitemap.errors,
+      diff: diff?.summary,
     });
   } else if (format === 'mermaid') {
     body = renderMermaid(tree, { maxDepth: toInt(values.depth, 'depth') });
+  } else if (format === 'csv') {
+    body = renderCsv(tree, { delimiter: extname(out ?? '').toLowerCase() === '.tsv' ? '\t' : ',' });
   } else if (format === 'json') {
-    body = JSON.stringify({ stats, tree }, null, 2);
+    body = JSON.stringify({ stats, diff: diff?.summary, tree }, null, 2);
   } else {
     body = renderText(tree, {
-      color: values.color && process.stdout.isTTY === true,
+      color: color && process.stdout.isTTY === true,
       maxDepth: toInt(values.depth, 'depth'),
     });
   }
@@ -228,6 +285,23 @@ async function main(): Promise<void> {
 
   for (const error of sitemap.errors) {
     process.stderr.write(`  ! ${error.source}: ${error.message}\n`);
+  }
+
+  // A CI guard: a deploy that quietly drops a chunk of the site should fail the
+  // build rather than land unnoticed.
+  const threshold = values['fail-if-removed'];
+  if (threshold !== undefined) {
+    if (!diff) fail('--fail-if-removed needs --against to compare with');
+    const percent = threshold.trim().endsWith('%');
+    const limit = Number.parseFloat(threshold);
+    if (!Number.isFinite(limit) || limit < 0) {
+      fail(`--fail-if-removed expects a count or a percentage, got "${threshold}"`);
+    }
+    const actual = percent ? diff.summary.removedShare * 100 : diff.summary.removed;
+    if (actual > limit) {
+      const shown = percent ? `${actual.toFixed(1)}%` : String(actual);
+      fail(`${shown} of URLs removed, over the ${threshold} allowed`);
+    }
   }
 }
 

@@ -28,8 +28,19 @@ export function renderText(root: TreeNode, options: TextOptions = {}): string {
   const lines: string[] = [];
   const paint = (text: string, code: string): string => (color ? `${code}${text}${RESET}` : text);
 
+  /** Diff markers borrow the colours a reader already knows from a patch. */
+  const MARKERS: Record<string, [string, string]> = {
+    added: ['+ ', `${ESC}32m`],
+    removed: ['- ', `${ESC}31m`],
+    changed: ['~ ', `${ESC}33m`],
+  };
+
   const label = (node: TreeNode): string => {
-    const name = paint(node.name, DEPTH_ANSI[node.depth % DEPTH_ANSI.length] as string);
+    const status = node.entry?.status;
+    const marker = status ? MARKERS[status] : undefined;
+    const name = marker
+      ? paint(`${marker[0]}${node.name}`, marker[1])
+      : paint(node.name, DEPTH_ANSI[node.depth % DEPTH_ANSI.length] as string);
     const count =
       counts && node.count > 1 ? paint(`  ${node.count.toLocaleString('en-US')}`, DIM) : '';
     const deeper = node.truncated ? paint(`  +${node.truncated} deeper`, DIM) : '';

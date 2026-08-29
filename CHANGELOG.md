@@ -25,8 +25,14 @@ First release.
   which keeps `--offline` useful.
 - `buildTree` groups entries by origin and branches on path segments, with
   options for collapsing single-child chains, depth limits and sorting.
+- Comparison: `--against` an earlier sitemap tags every URL added, removed or
+  changed, and the same tree renders it — green for new, struck through for
+  gone, with a running `+N -M` on every folder. `--fail-if-removed` turns that
+  into a CI guard.
+- A plain list of URLs is accepted anywhere a sitemap is, so a crawler export
+  or a pasted column of links goes through the same pipeline.
 - Renderers: a self-contained interactive HTML page, a Mermaid graph, a
-  terminal tree, and JSON.
+  terminal tree, CSV, and JSON.
 - The `sitemap-atlas` CLI over all of the above.
 
 ### Notes

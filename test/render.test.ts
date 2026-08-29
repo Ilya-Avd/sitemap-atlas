@@ -3,6 +3,7 @@ import { buildTree, summarize } from '../src/tree.js';
 import { renderHtml } from '../src/render/html.js';
 import { renderMermaid } from '../src/render/mermaid.js';
 import { renderText } from '../src/render/text.js';
+import { renderCsv } from '../src/render/csv.js';
 import type { SitemapEntry } from '../src/types.js';
 
 const entries = (...locs: string[]): SitemapEntry[] => locs.map((loc) => ({ loc }));
@@ -192,5 +193,42 @@ describe('renderHtml failures block', () => {
 
   it('is left out entirely when everything was read', () => {
     expect(renderHtml(tree(), summarize(tree()))).not.toContain('could not be read');
+  });
+});
+
+describe('renderCsv', () => {
+  const tree = () =>
+    buildTree([
+      { loc: 'https://e.com/', lastmod: '2026-01-01', changefreq: 'daily', priority: 1 },
+      { loc: 'https://e.com/a/b', images: 2 },
+    ]);
+
+  it('writes a header and one row per URL, in tree order', () => {
+    const rows = renderCsv(tree()).split('\n');
+    expect(rows[0]).toBe('loc,depth,lastmod,changefreq,priority,images,videos,status');
+    expect(rows[1]).toBe('https://e.com/,0,2026-01-01,daily,1,,,');
+    expect(rows[2]).toBe('https://e.com/a/b,2,,,,2,,');
+  });
+
+  it('can be a TSV instead', () => {
+    expect(renderCsv(tree(), { delimiter: '\t' }).split('\n')[0]).toContain('loc\tdepth');
+  });
+
+  it('leaves the header out on request', () => {
+    expect(renderCsv(tree(), { header: false }).split('\n')[0]).toMatch(/^https:/);
+  });
+
+  it('quotes a value that would otherwise break the row', () => {
+    // Commas are legal in a URL path, and would split the row unquoted.
+    const awkward = buildTree([{ loc: 'https://e.com/a,b' }]);
+    expect(renderCsv(awkward, { header: false })).toBe('"https://e.com/a,b",1,,,,,,');
+    expect(renderCsv(awkward, { header: false, delimiter: '\t' })).toBe(
+      'https://e.com/a,b\t1\t\t\t\t\t\t',
+    );
+  });
+
+  it('carries the diff status through', () => {
+    const diffed = buildTree([{ loc: 'https://e.com/x', status: 'added' }]);
+    expect(renderCsv(diffed, { header: false })).toContain(',added');
   });
 });

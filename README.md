@@ -65,7 +65,10 @@ sitemap-atlas <file|url|-> [options]
 
 Options
   -o, --out <file>       Write here. The extension picks the format.
-  -f, --format <fmt>     html | text | mermaid | json  (default: text, or html with -o *.html)
+  -f, --format <fmt>     html | text | mermaid | json | csv  (default: text, or from -o)
+      --against <old>    Compare with an earlier sitemap and show what changed
+      --lastmod          Also treat a changed <lastmod> as a change
+      --fail-if-removed <n>  Exit 1 if more than n URLs (or n%) disappeared
       --open             Open the result in the default browser
       --depth <n>        Collapse everything below this depth (mermaid defaults to 4)
       --collapse         Merge single-child folder chains (2024/01/15)
@@ -89,6 +92,47 @@ With no `-o` it prints the tree to stdout, so it composes:
 sitemap-atlas ./sitemap.xml -f mermaid --depth 3 > structure.mmd
 curl -s https://example.com/sitemap.xml | sitemap-atlas -
 sitemap-atlas ./sitemap.xml -f json | jq '.stats'
+```
+
+### Comparing two sitemaps
+
+`--against` takes the earlier sitemap; the input is the current one. Added URLs come out green,
+removed ones struck through in red, and every folder carries a running `+N −M` so you can see where
+a release landed without opening it.
+
+```bash
+sitemap-atlas https://example.com --against ./last-week.xml -o changes.html
+```
+
+```
+shop.example  8
+├── blog  2
+│   ├── post-1
+│   └── + post-2
+├── - old-landing
+└── products  3
+    └── - discontinued
+```
+
+`--lastmod` also counts a moved `<lastmod>` as a change. It is off by default because many
+generators rewrite that field on every build, which would mark the whole site as changed.
+
+In CI, `--fail-if-removed` turns the comparison into a guard, so a deploy that quietly drops part
+of the site fails the build instead of landing unnoticed:
+
+```bash
+sitemap-atlas https://example.com --against ./baseline.xml --fail-if-removed 5% -q
+```
+
+### A plain list of URLs works too
+
+The tree only ever needed addresses; XML is just the usual container. A crawler export, a `find`
+run or a pasted column of links goes through the same pipeline — blank lines and `#` comments are
+ignored.
+
+```bash
+cat urls.txt | sitemap-atlas -
+sitemap-atlas ./crawl-export.txt -o report.html
 ```
 
 ### What it handles
@@ -131,11 +175,15 @@ await fs.writeFile('report.html', renderHtml(tree, stats, { source: './sitemap.x
 - `parseRobots(text)` / `looksLikeSitemap(xml)` / `sameSite(origin, target)` — the pieces discovery
   is built from, exported because they are useful on their own.
 - `parseSitemap(xml, source?)` — one document, synchronously. Returns `{ kind, entries, refs }`.
+- `parseUrlList(text, source?)` / `looksLikeUrlList(text)` — the same, for a plain list of URLs.
 - `buildTree(entries, options?)` — groups entries by host, then branches on path segments.
 - `summarize(tree)` — URL and folder counts, depth, hosts, `lastmod` window, media counts.
-- `renderHtml(tree, stats, options?)` — one self-contained page.
+- `diffSitemaps(before, after, options?)` — tags every URL `added`, `removed`, `changed` or
+  `unchanged` and returns a summary. Removed URLs stay in the result so the tree can show them.
+- `renderHtml(tree, stats, options?)` — one self-contained page. Pass `diff` to colour it.
 - `renderText(tree, options?)` — the terminal tree, optionally with ANSI colour.
 - `renderMermaid(tree, options?)` — Mermaid `graph` source.
+- `renderCsv(tree, options?)` — one row per URL, for a spreadsheet.
 
 Every option is documented on its type; `TreeNode` is a plain object, so you are free to walk it
 yourself instead of using a renderer.

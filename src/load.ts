@@ -4,6 +4,7 @@ import { basename, dirname, resolve } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import { parseSitemap } from './parse.js';
 import { discover as discover_ } from './discover.js';
+import { looksLikeUrlList, parseUrlList } from './urllist.js';
 import type { Sitemap, SitemapEntry, SitemapError, SitemapRef } from './types.js';
 
 export interface LoadOptions {
@@ -28,13 +29,17 @@ export interface LoadOptions {
    * ones via robots.txt and the conventional paths. Default `true`.
    */
   discover?: boolean;
+  /** Accept a plain list of URLs where a sitemap was expected. Default `true`. */
+  urlLists?: boolean;
   /** Called with the sitemaps discovery turned up, before they are read. */
   onDiscover?: (found: string[]) => void;
 }
 
 const DEFAULT_UA = 'sitemap-atlas (+https://github.com/Ilya-Avd/sitemap-atlas)';
 
-const isUrl = (input: string): boolean => /^https?:\/\//i.test(input);
+// Anchored at both ends: a multi-line list of URLs starts with `https://` too,
+// and must not be mistaken for a single address to fetch.
+const isUrl = (input: string): boolean => /^https?:\/\/\S+$/i.test(input.trim());
 const looksLikeXml = (input: string): boolean => input.trimStart().startsWith('<');
 
 /** Gzip magic number — servers and files both hand us .gz without always saying so. */
@@ -112,6 +117,7 @@ export async function loadSitemap(input: string, options: LoadOptions = {}): Pro
     concurrency = 6,
     offline = false,
     discover = true,
+    urlLists = true,
   } = options;
 
   // Without this, an empty string falls through to the path branch and resolves
@@ -159,6 +165,13 @@ export async function loadSitemap(input: string, options: LoadOptions = {}): Pro
     try {
       doc = parseSitemap(body, source);
     } catch (err) {
+      // Not XML — a plain list of URLs is just as good a source of a tree.
+      if (urlLists && looksLikeUrlList(body)) {
+        node.entries = parseUrlList(body, source);
+        fetched += node.entries.length;
+        options.onProgress?.(source, node.entries.length);
+        return node;
+      }
       node.error = { source, message: err instanceof Error ? err.message : String(err) };
       return node;
     }
@@ -196,8 +209,10 @@ export async function loadSitemap(input: string, options: LoadOptions = {}): Pro
     return node;
   };
 
-  const rootSource = looksLikeXml(input) ? '<inline>' : isUrl(input) ? input : resolve(input);
-  let roots: Node[] = [await walk(rootSource, looksLikeXml(input) ? input : undefined, 0)];
+  // Content handed in directly, rather than a place to read it from.
+  const inline = looksLikeXml(input) || (urlLists && looksLikeUrlList(input) && !isUrl(input));
+  const rootSource = inline ? '<inline>' : isUrl(input) ? input : resolve(input);
+  let roots: Node[] = [await walk(rootSource, inline ? input : undefined, 0)];
 
   // A bare site address is the common case here: the homepage came back and it
   // is not a sitemap, so go and find the real ones.

@@ -25,6 +25,23 @@
     byPath.set(node.path, node);
     if (parent) parentOf.set(node.path, parent);
     for (var i = 0; i < node.children.length; i++) index(node.children[i], node);
+
+    // Roll the diff up the tree, so a folder can say what happened inside it
+    // without the reader having to open it.
+    if (DATA.diff) {
+      var st = node.entry && node.entry.st;
+      node.delta = {
+        a: st === 'a' ? 1 : 0,
+        r: st === 'r' ? 1 : 0,
+        c: st === 'c' ? 1 : 0,
+      };
+      for (var j = 0; j < node.children.length; j++) {
+        var child = node.children[j].delta;
+        node.delta.a += child.a;
+        node.delta.r += child.r;
+        node.delta.c += child.c;
+      }
+    }
   })(root, null);
 
   var state = {
@@ -32,6 +49,7 @@
     query: '',
     expanded: new Set(),
     shown: new Map(),
+    changesOnly: false,
   };
 
   // Two levels open by default: enough to read the shape of a site without
@@ -99,8 +117,8 @@
   var filter = null; /* { visible: Set, matched: Set } or null */
 
   function computeFilter(query) {
-    if (!query) return null;
-    var q = query.toLowerCase();
+    var q = query ? query.toLowerCase() : null;
+    if (!q && !state.changesOnly) return null;
     var visible = new Set();
     var matched = new Set();
     (function walk(node) {
@@ -108,9 +126,14 @@
       for (var i = 0; i < node.children.length; i++) {
         if (walk(node.children[i])) hit = true;
       }
-      var loc = node.entry ? node.entry.loc.toLowerCase() : '';
-      var self = node.name.toLowerCase().indexOf(q) >= 0 || loc.indexOf(q) >= 0;
-      if (self) matched.add(node.path);
+      var self = true;
+      if (q) {
+        var loc = node.entry ? node.entry.loc.toLowerCase() : '';
+        self = node.name.toLowerCase().indexOf(q) >= 0 || loc.indexOf(q) >= 0;
+        if (self) matched.add(node.path);
+      }
+      // "Changes only" hides untouched leaves; a folder survives on its children.
+      if (self && state.changesOnly) self = Boolean(node.entry && node.entry.st);
       if (self || hit) {
         visible.add(node.path);
         return true;
@@ -165,6 +188,7 @@
     var kids = childrenOf(node);
     var open = isOpen(node);
     var row = el('div', 'row' + (kids.length ? ' has-children' : '') + (open ? ' open' : ''));
+    if (node.entry && node.entry.st) row.className += ' st-' + node.entry.st;
     if (filter && filter.matched.has(node.path)) row.className += ' match';
     row.dataset.path = node.path;
     row.title = tooltip(node);
@@ -174,7 +198,9 @@
     row.appendChild(twisty);
 
     var dot = el('span', 'dot' + (node.entry ? '' : ' hollow'));
-    dot.style.color = colorOf(node.depth);
+    // In a diff the palette belongs to the statuses; depth colours would read
+    // as statuses too, and at depth 2 the depth green is the "added" green.
+    dot.style.color = DATA.diff ? 'var(--text-faint)' : colorOf(node.depth);
     row.appendChild(dot);
 
     var label = el('span', 'label');
@@ -184,6 +210,14 @@
     if (node.count > 1 || kids.length) row.appendChild(el('span', 'badge', num(node.count)));
     if (node.dupes) row.appendChild(el('span', 'badge', '×' + (node.dupes + 1)));
     if (node.truncated) row.appendChild(el('span', 'badge', '+' + num(node.truncated) + ' deeper'));
+
+    if (DATA.diff && kids.length && node.delta && (node.delta.a || node.delta.r || node.delta.c)) {
+      var delta = el('span', 'delta');
+      if (node.delta.a) delta.appendChild(el('span', 'plus', '+' + num(node.delta.a)));
+      if (node.delta.r) delta.appendChild(el('span', 'minus', '−' + num(node.delta.r)));
+      if (node.delta.c) delta.appendChild(el('span', 'tilde', '~' + num(node.delta.c)));
+      row.appendChild(delta);
+    }
 
     var meta = el('span', 'meta');
     if (node.entry && node.entry.lastmod) {
@@ -492,6 +526,18 @@
   document.getElementById('view-graph').addEventListener('click', function () {
     setView('graph');
   });
+
+  var changesButton = document.getElementById('changes');
+  if (changesButton) {
+    changesButton.hidden = !DATA.diff;
+    changesButton.addEventListener('click', function () {
+      state.changesOnly = !state.changesOnly;
+      changesButton.setAttribute('aria-pressed', String(state.changesOnly));
+      filter = computeFilter(state.query);
+      state.shown.clear();
+      render();
+    });
+  }
 
   document.getElementById('fit').addEventListener('click', function () {
     fit();

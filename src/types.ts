@@ -1,6 +1,9 @@
 /** Values allowed by the sitemaps.org `<changefreq>` element. */
 export type ChangeFreq = 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
 
+/** How a URL compares against an earlier version of the same sitemap. */
+export type UrlStatus = 'added' | 'removed' | 'changed' | 'unchanged';
+
 /** One `<url>` entry of a sitemap. */
 export interface SitemapEntry {
   loc: string;
@@ -18,6 +21,8 @@ export interface SitemapEntry {
   videos?: number;
   /** Whether the entry carries a `<news:news>` block. */
   news?: boolean;
+  /** Set only by `diffSitemaps`. */
+  status?: UrlStatus;
 }
 
 export interface Alternate {

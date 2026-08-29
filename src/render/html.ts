@@ -1,4 +1,5 @@
 import type { SitemapEntry, SitemapError, TreeNode, TreeStats } from '../types.js';
+import type { DiffSummary } from '../diff.js';
 import { VIEWER_CSS, VIEWER_JS } from './assets.generated.js';
 
 export interface HtmlOptions {
@@ -18,6 +19,8 @@ export interface HtmlOptions {
   csp?: string;
   /** Force the colour scheme instead of following the reader's system setting. */
   theme?: 'light' | 'dark';
+  /** Present when the tree is a comparison; drives the colouring and the chips. */
+  diff?: DiffSummary;
 }
 
 /** Entry shape written into the page — see the note in viewer.js. */
@@ -28,6 +31,8 @@ interface WireEntry extends Omit<SitemapEntry, 'source' | 'alternates' | 'loc'> 
   slash?: 1;
   /** How many hreflang alternates the entry declared. */
   alts?: number;
+  /** Diff status, abbreviated: a=added, r=removed, c=changed. Absent = unchanged. */
+  st?: 'a' | 'r' | 'c';
 }
 
 /** Node shape actually written into the page — see the note in viewer.js. */
@@ -54,8 +59,9 @@ function toWire(node: TreeNode, parentPath: string | null): WireNode {
     // real sitemap: `source` repeats on every entry, `loc` is nearly always the
     // node path, and the viewer only ever shows how many alternates there are —
     // a site with hreflang can spend a megabyte on hrefs nothing reads.
-    const { source: _source, alternates, loc, ...rest } = node.entry;
+    const { source: _source, alternates, loc, status, ...rest } = node.entry;
     const entry: WireEntry = { ...rest };
+    if (status && status !== 'unchanged') entry.st = status[0] as 'a' | 'r' | 'c';
     if (loc === `${node.path}/`) entry.slash = 1;
     else if (loc !== node.path) entry.loc = loc;
     if (alternates?.length) entry.alts = alternates.length;
@@ -88,6 +94,16 @@ function chip(label: string, value: string, warn = false): string {
 
 function chips(stats: TreeStats, options: HtmlOptions): string {
   const out = [chip('URLs', num(stats.urls)), chip('folders', num(stats.folders))];
+  if (options.diff) {
+    const { added, removed, changed } = options.diff;
+    // The comparison is the headline when there is one, so it goes first.
+    out.length = 0;
+    out.push(chip('URLs', num(stats.urls)));
+    out.push(`<li class="chip added"><b>+${num(added)}</b> added</li>`);
+    out.push(`<li class="chip removed"><b>−${num(removed)}</b> removed</li>`);
+    if (changed) out.push(`<li class="chip changed"><b>~${num(changed)}</b> changed</li>`);
+    out.push(chip('folders', num(stats.folders)));
+  }
   out.push(chip('levels deep', String(stats.maxDepth)));
   if (stats.hosts.length > 1) out.push(chip('hosts', String(stats.hosts.length)));
   if ((options.sourceCount ?? 1) > 1)
@@ -122,7 +138,9 @@ const SEARCH_ICON =
 export function renderHtml(root: TreeNode, stats: TreeStats, options: HtmlOptions = {}): string {
   const title = options.title ?? root.name;
   const generated = (options.now ?? new Date()).toISOString().replace('T', ' ').slice(0, 16);
-  const payload = escapeJson(JSON.stringify({ root: toWire(root, null) }));
+  const payload = escapeJson(
+    JSON.stringify({ root: toWire(root, null), diff: options.diff ? true : undefined }),
+  );
   const failed = options.errors?.length ?? 0;
   const errorList = failed
     ? `<details class="failures"><summary>${failed} ${
@@ -168,6 +186,7 @@ ${VIEWER_CSS}
       <button id="view-outline" aria-pressed="true">Outline</button>
       <button id="view-graph" aria-pressed="false">Graph</button>
     </div>
+    <button class="btn" id="changes" aria-pressed="false" hidden>Only changes</button>
     <button class="btn" id="fit" hidden>Fit</button>
     <button class="btn" id="expand">Expand all</button>
     <button class="btn" id="collapse">Collapse</button>
