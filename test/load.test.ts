@@ -125,6 +125,7 @@ describe('loadSitemap discovery', () => {
       if (body === undefined) {
         return new Response('nope', { status: 404, statusText: 'Not Found' });
       }
+
       return new Response(body, { status: 200 });
     });
 
@@ -203,6 +204,7 @@ describe('loadSitemap discovery errors', () => {
         };
         const body = routes[String(url)];
         if (body === undefined) return new Response('', { status: 404, statusText: 'Not Found' });
+
         return new Response(body, { status: 200 });
       }),
     );
@@ -224,6 +226,7 @@ describe('loadSitemap discovery errors', () => {
         };
         const body = routes[String(url)];
         if (body === undefined) return new Response('', { status: 404, statusText: 'Not Found' });
+
         return new Response(body, { status: 200 });
       }),
     );

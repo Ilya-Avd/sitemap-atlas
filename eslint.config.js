@@ -19,6 +19,10 @@ export default tseslint.config(
   {
     languageOptions: { globals: { console: 'readonly', process: 'readonly' } },
     rules: {
+      'padding-line-between-statements': [
+        'error',
+        { blankLine: 'always', prev: '*', next: 'return' },
+      ],
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',

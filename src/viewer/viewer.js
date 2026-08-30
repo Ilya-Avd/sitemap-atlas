@@ -71,12 +71,14 @@
     var node = document.createElement(tag);
     if (cls) node.className = cls;
     if (text != null) node.textContent = text;
+
     return node;
   }
 
   function svgEl(tag, attrs) {
     var node = document.createElementNS('http://www.w3.org/2000/svg', tag);
     for (var key in attrs) node.setAttribute(key, attrs[key]);
+
     return node;
   }
 
@@ -92,11 +94,13 @@
         'stroke-linejoin': 'round',
       }),
     );
+
     return svg;
   }
 
   function shortDate(value) {
     if (!value) return '';
+
     return String(value).slice(0, 10);
   }
 
@@ -109,6 +113,7 @@
       if (node.entry.alts) lines.push('alternates: ' + node.entry.alts);
     }
     if (node.children.length) lines.push(num(node.count) + ' URLs below');
+
     return lines.join('\n');
   }
 
@@ -136,15 +141,19 @@
       if (self && state.changesOnly) self = Boolean(node.entry && node.entry.st);
       if (self || hit) {
         visible.add(node.path);
+
         return true;
       }
+
       return false;
     })(root);
+
     return { visible: visible, matched: matched };
   }
 
   function childrenOf(node) {
     if (!filter) return node.children;
+
     return node.children.filter(function (child) {
       return filter.visible.has(child.path);
     });
@@ -154,6 +163,7 @@
     if (!childrenOf(node).length) return false;
     // A search result is only useful if the path down to it is already unfolded.
     if (filter) return true;
+
     return state.expanded.has(node.path);
   }
 
@@ -165,6 +175,7 @@
   function highlight(text, target) {
     if (!state.query) {
       target.appendChild(document.createTextNode(text));
+
       return;
     }
     var lower = text.toLowerCase();
@@ -173,6 +184,7 @@
     var at = lower.indexOf(q, from);
     if (at < 0) {
       target.appendChild(document.createTextNode(text));
+
       return;
     }
     while (at >= 0) {
@@ -241,6 +253,7 @@
         toggle(node.path);
       });
     }
+
     return row;
   }
 
@@ -271,6 +284,7 @@
     budget = ROW_BUDGET;
     if (filter && !filter.visible.size) {
       outline.appendChild(el('div', 'empty', 'Nothing matches "' + state.query + '"'));
+
       return;
     }
     renderNode(root, outline);
@@ -322,8 +336,10 @@
         item.y = cursor++ * DY;
       }
       nodes.push(item);
+
       return item;
     })(root, 0);
+
     return { nodes: nodes, links: links };
   }
 

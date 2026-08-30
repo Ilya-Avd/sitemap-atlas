@@ -51,6 +51,7 @@ const looksLikeXml = (input: string): boolean => input.trimStart().startsWith('<
 /** Gzip magic number — servers and files both hand us .gz without always saying so. */
 function decode(bytes: Uint8Array): string {
   const body = bytes[0] === 0x1f && bytes[1] === 0x8b ? gunzipSync(bytes) : bytes;
+
   return new TextDecoder('utf-8').decode(body);
 }
 
@@ -61,6 +62,7 @@ async function readUrl(url: string, opts: LoadOptions): Promise<string> {
     redirect: 'follow',
   });
   if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+
   return decode(new Uint8Array(await res.arrayBuffer()));
 }
 
@@ -90,6 +92,7 @@ function siblingOf(parent: string, loc: string): string | undefined {
   }
   if (!name) return undefined;
   const candidate = resolve(dirname(resolve(parent)), name);
+
   return existsSync(candidate) ? candidate : undefined;
 }
 
@@ -107,6 +110,7 @@ async function mapLimit<T, R>(
     }
   });
   await Promise.all(workers);
+
   return results;
 }
 
@@ -138,8 +142,10 @@ export async function loadSitemap(input: string, options: LoadOptions = {}): Pro
   const read = async (source: string): Promise<string> => {
     if (isUrl(source)) {
       if (offline) throw new Error('offline mode: refusing to fetch over the network');
+
       return readUrl(source, options);
     }
+
     return readPath(source);
   };
 
@@ -165,6 +171,7 @@ export async function loadSitemap(input: string, options: LoadOptions = {}): Pro
       body = xml ?? (await read(source));
     } catch (err) {
       node.error = { source, message: err instanceof Error ? err.message : String(err) };
+
       return node;
     }
 
@@ -177,9 +184,11 @@ export async function loadSitemap(input: string, options: LoadOptions = {}): Pro
         node.entries = parseUrlList(body, source);
         fetched += node.entries.length;
         options.onProgress?.(source, node.entries.length);
+
         return node;
       }
       node.error = { source, message: err instanceof Error ? err.message : String(err) };
+
       return node;
     }
 
@@ -210,6 +219,7 @@ export async function loadSitemap(input: string, options: LoadOptions = {}): Pro
       }
       // Enough URLs already: stop reading, but keep the slot so nothing shifts.
       if (fetched >= maxUrls) return { source: target, entries: [], refs: [], children: [] };
+
       return walk(target, undefined, depth + 1);
     });
 
@@ -240,6 +250,7 @@ export async function loadSitemap(input: string, options: LoadOptions = {}): Pro
       options.onDiscover?.(result.found.map((item) => item.loc));
       roots = await mapLimit(result.found, concurrency, async (item) => {
         if (seen.has(item.loc)) return { source: item.loc, entries: [], refs: [], children: [] };
+
         return walk(item.loc, item.body, 1);
       });
     }

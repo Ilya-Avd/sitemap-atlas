@@ -15,6 +15,7 @@ function trace(xml: string): string[] {
     text: (value) => out.push(`"${value}"`),
   };
   scanXml(xml, handler);
+
   return out;
 }
 
@@ -125,6 +126,7 @@ describe('scanXml CDATA and entities together', () => {
   const textOf = (xml: string): string[] => {
     const out: string[] = [];
     scanXml(xml, { open: () => {}, close: () => {}, text: (v) => out.push(v) });
+
     return out;
   };
 

@@ -44,6 +44,7 @@ export function renderText(root: TreeNode, options: TextOptions = {}): string {
     const count =
       counts && node.count > 1 ? paint(`  ${node.count.toLocaleString('en-US')}`, DIM) : '';
     const deeper = node.truncated ? paint(`  +${node.truncated} deeper`, DIM) : '';
+
     return `${name}${count}${deeper}`;
   };
 
@@ -58,6 +59,7 @@ export function renderText(root: TreeNode, options: TextOptions = {}): string {
           cut = true;
           lines.push(`${prefix}...`);
         }
+
         return;
       }
       const child = children[i] as TreeNode;
@@ -69,5 +71,6 @@ export function renderText(root: TreeNode, options: TextOptions = {}): string {
 
   lines.push(label(root));
   walk(root, '');
+
   return lines.join('\n');
 }

@@ -14,11 +14,13 @@ const CHANGEFREQS: ReadonlySet<string> = new Set([
 function parsePriority(raw: string): number | undefined {
   const n = Number.parseFloat(raw);
   if (!Number.isFinite(n)) return undefined;
+
   return Math.min(1, Math.max(0, n));
 }
 
 function parseChangeFreq(raw: string): ChangeFreq | undefined {
   const value = raw.toLowerCase();
+
   return CHANGEFREQS.has(value) ? (value as ChangeFreq) : undefined;
 }
 
@@ -53,6 +55,7 @@ export function parseSitemap(xml: string, source?: string): ParsedDocument {
       if (kind === undefined) {
         if (name === 'urlset') kind = 'urlset';
         else if (name === 'sitemapindex') kind = 'sitemapindex';
+
         return;
       }
 
@@ -64,6 +67,7 @@ export function parseSitemap(xml: string, source?: string): ParsedDocument {
           ref = { loc: '' };
           recordDepth = at;
         }
+
         return;
       }
 
@@ -74,14 +78,17 @@ export function parseSitemap(xml: string, source?: string): ParsedDocument {
       if (entry) {
         if (name === 'image') {
           entry.images = (entry.images ?? 0) + 1;
+
           return;
         }
         if (name === 'video') {
           entry.videos = (entry.videos ?? 0) + 1;
+
           return;
         }
         if (name === 'news') {
           entry.news = true;
+
           return;
         }
         if (name === 'link') {
@@ -92,6 +99,7 @@ export function parseSitemap(xml: string, source?: string): ParsedDocument {
           if ((rel === undefined || rel === 'alternate') && hreflang && href) {
             (entry.alternates ??= []).push({ hreflang, href });
           }
+
           return;
         }
       }
@@ -131,5 +139,6 @@ export function parseSitemap(xml: string, source?: string): ParsedDocument {
   if (kind === undefined) {
     throw new Error('not a sitemap: expected a <urlset> or <sitemapindex> root element');
   }
+
   return { kind, entries, refs };
 }

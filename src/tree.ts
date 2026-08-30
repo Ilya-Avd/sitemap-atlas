@@ -41,12 +41,14 @@ function segmentsOf(url: URL): string[] {
   if (!tail) return segments;
   if (segments.length === 0) return [tail];
   segments[segments.length - 1] += tail;
+
   return segments;
 }
 
 function attach(node: MutableNode, entry: SitemapEntry): void {
   if (!node.entry) {
     node.entry = entry;
+
     return;
   }
   // Two entries landing on one node means the sitemap lists the same page
@@ -77,6 +79,7 @@ export function buildTree(entries: SitemapEntry[], options: TreeOptions = {}): T
       node.children.push(child);
       names.set(segment, child);
     }
+
     return child;
   };
 
@@ -129,6 +132,7 @@ export function buildTree(entries: SitemapEntry[], options: TreeOptions = {}): T
     reindex(root, 0);
   }
   sort(root, options);
+
   return root;
 }
 
@@ -141,6 +145,7 @@ function count(node: MutableNode): number {
   let total = (node.entry ? 1 : 0) + (node.duplicates?.length ?? 0) + (node.truncated ?? 0);
   for (const child of node.children) total += count(child);
   node.count = total;
+
   return total;
 }
 
@@ -150,12 +155,14 @@ function collapseChains(node: MutableNode, isRoot: boolean): MutableNode {
   if (!isRoot && only && !node.entry && !node.truncated) {
     return { ...only, name: `${node.name}/${only.name}`, depth: node.depth };
   }
+
   return node;
 }
 
 function lastmodTime(node: MutableNode): number {
   const raw = node.entry?.lastmod;
   const time = raw ? Date.parse(raw) : Number.NaN;
+
   return Number.isNaN(time) ? -Infinity : time;
 }
 
@@ -165,6 +172,7 @@ function sort(node: MutableNode, options: TreeOptions): void {
   const compare = (a: MutableNode, b: MutableNode): number => {
     if (sortBy === 'count') return (a.count - b.count) * dir;
     if (sortBy === 'lastmod') return (lastmodTime(a) - lastmodTime(b)) * dir;
+
     return a.name.localeCompare(b.name, undefined, { numeric: true }) * dir;
   };
   node.children.sort(compare);
@@ -222,5 +230,6 @@ export function summarize(root: TreeNode): TreeStats {
 
   visit(root);
   stats.hosts = [...hosts].sort();
+
   return stats;
 }

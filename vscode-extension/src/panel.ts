@@ -15,6 +15,7 @@ function nonce(): string {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let out = '';
   for (let i = 0; i < 32; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+
   return out;
 }
 
@@ -29,6 +30,7 @@ interface Settings {
 
 function settings(): Settings {
   const config = vscode.workspace.getConfiguration('sitemapAtlas');
+
   return {
     allowNetwork: config.get('allowNetwork', false),
     followIndexes: config.get('followIndexes', true),
@@ -65,6 +67,7 @@ export async function build(
     maxDepth: config.maxDepth > 0 ? config.maxDepth : undefined,
     sortBy: config.sortBy,
   });
+
   return { sitemap, tree, stats: summarize(tree) };
 }
 
@@ -77,6 +80,7 @@ const isLightTheme = (): boolean =>
 /** A webview needs a nonce on every inline block, and should match the editor theme. */
 export function renderForWebview(result: Result, source: Source): string {
   const id = nonce();
+
   return renderHtml(result.tree, result.stats, {
     source: labelOf(source),
     sourceCount: result.sitemap.sources.length,
@@ -130,6 +134,7 @@ export class SitemapPanel {
     if (existing) {
       existing.panel.reveal(column);
       await existing.refresh();
+
       return;
     }
 
@@ -175,6 +180,7 @@ export class SitemapPanel {
 function errorPage(label: string, message: string): string {
   const escape = (value: string): string =>
     value.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] as string);
+
   return `<!doctype html><html><body style="font-family:var(--vscode-font-family);padding:24px">
 <h3 style="margin:0 0 8px">Could not read ${escape(label)}</h3>
 <p style="color:var(--vscode-descriptionForeground)">${escape(message)}</p>

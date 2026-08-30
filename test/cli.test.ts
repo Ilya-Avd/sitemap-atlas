@@ -22,6 +22,7 @@ function runFailing(args: string[], input = ''): string {
   } catch (error) {
     const failure = error as { status: number; stderr: string };
     expect(failure.status).toBe(1);
+
     return failure.stderr;
   }
   throw new Error('expected the command to fail');
@@ -143,6 +144,7 @@ describe('cli comparison and new formats', () => {
         .map((loc) => `<url><loc>${loc}</loc></url>`)
         .join('')}</urlset>`,
     );
+
     return path;
   };
   const before = write('before.xml', ['https://e.com/keep', 'https://e.com/drop']);

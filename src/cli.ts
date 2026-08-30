@@ -81,12 +81,14 @@ function toInt(value: string | undefined, name: string): number | undefined {
   if (value === undefined) return undefined;
   const n = Number.parseInt(value, 10);
   if (!Number.isFinite(n) || n < 0) fail(`--${name} expects a non-negative number, got "${value}"`);
+
   return n;
 }
 
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+
   return Buffer.concat(chunks).toString('utf8');
 }
 
@@ -140,6 +142,7 @@ async function main(): Promise<void> {
   if (!input) {
     process.stderr.write(HELP);
     process.exitCode = 1;
+
     return;
   }
   if (positionals.length > 1) {

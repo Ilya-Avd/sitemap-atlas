@@ -25,6 +25,7 @@ function roundedBox(x, y, half, radius) {
   const dx = Math.abs(x - SIZE / 2) - half + radius;
   const dy = Math.abs(y - SIZE / 2) - half + radius;
   const outside = Math.hypot(Math.max(dx, 0), Math.max(dy, 0));
+
   return outside + Math.min(Math.max(dx, dy), 0) - radius;
 }
 
@@ -32,6 +33,7 @@ function segmentDistance(px, py, ax, ay, bx, by) {
   const vx = bx - ax;
   const vy = by - ay;
   const t = clamp01(((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy || 1));
+
   return Math.hypot(px - (ax + vx * t), py - (ay + vy * t));
 }
 
@@ -47,6 +49,7 @@ function curve(x0, y0, x1, y1) {
       u * u * u * y0 + 3 * u * u * t * y0 + 3 * u * t * t * y1 + t * t * t * y1,
     ]);
   }
+
   return points;
 }
 
@@ -75,6 +78,7 @@ function glyph(x, y) {
   for (const [lx, ly] of LEAVES) {
     cover = Math.max(cover, clamp01(1.5 - (Math.hypot(x - lx, y - ly) - 11)));
   }
+
   return cover;
 }
 
@@ -99,12 +103,14 @@ for (let y = 0; y < SIZE; y++) {
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
   let c = n;
   for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+
   return c >>> 0;
 });
 
 function crc32(buffer) {
   let c = 0xffffffff;
   for (const byte of buffer) c = CRC_TABLE[(c ^ byte) & 0xff] ^ (c >>> 8);
+
   return (c ^ 0xffffffff) >>> 0;
 }
 
@@ -114,6 +120,7 @@ function chunk(type, data) {
   const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
   const crc = Buffer.alloc(4);
   crc.writeUInt32BE(crc32(body));
+
   return Buffer.concat([length, body, crc]);
 }
 
