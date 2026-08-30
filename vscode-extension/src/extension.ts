@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       const destination = await vscode.window.showSaveDialog({
         title: 'Export sitemap tree',
-        defaultUri: uri.with({ path: uri.path.replace(/\.xml$/i, '') + '-tree.html' }),
+        defaultUri: uri.with({ path: `${uri.path.replace(/\.xml$/i, '')}-tree.html` }),
         filters: { 'HTML page': ['html'] },
       });
       if (!destination) return;

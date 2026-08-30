@@ -2,41 +2,41 @@
 (function () {
   'use strict';
 
-  var DATA = window.__SITEMAP__;
-  var root = DATA.root;
-  var DEPTH_COLORS = 6;
-  var CHILD_PAGE = 300;
-  var ROW_BUDGET = 4000;
+  const DATA = window.__SITEMAP__;
+  const root = DATA.root;
+  const DEPTH_COLORS = 6;
+  const CHILD_PAGE = 300;
+  const ROW_BUDGET = 4000;
 
   /* ---------- index ---------- */
 
   // `depth`, `children` and most `path`s are dropped from the payload and
   // rebuilt here — on a large sitemap the repeated path prefixes dominate the
   // file size. A node keeps an explicit `path` only when it is not derivable.
-  var byPath = new Map();
-  var parentOf = new Map();
+  const byPath = new Map();
+  const parentOf = new Map();
   (function index(node, parent) {
     node.depth = parent ? parent.depth + 1 : 0;
-    if (node.path == null) node.path = parent ? parent.path + '/' + node.name : '';
+    if (node.path == null) node.path = parent ? `${parent.path}/${node.name}` : '';
     if (!node.children) node.children = [];
     if (node.entry && !node.entry.loc) {
       node.entry.loc = node.path + (node.entry.slash ? '/' : '');
     }
     byPath.set(node.path, node);
     if (parent) parentOf.set(node.path, parent);
-    for (var i = 0; i < node.children.length; i++) index(node.children[i], node);
+    for (let i = 0; i < node.children.length; i++) index(node.children[i], node);
 
     // Roll the diff up the tree, so a folder can say what happened inside it
     // without the reader having to open it.
     if (DATA.diff) {
-      var st = node.entry && node.entry.st;
+      const st = node.entry && node.entry.st;
       node.delta = {
         a: st === 'a' ? 1 : 0,
         r: st === 'r' ? 1 : 0,
         c: st === 'c' ? 1 : 0,
       };
-      for (var j = 0; j < node.children.length; j++) {
-        var child = node.children[j].delta;
+      for (let j = 0; j < node.children.length; j++) {
+        const child = node.children[j].delta;
         node.delta.a += child.a;
         node.delta.r += child.r;
         node.delta.c += child.c;
@@ -44,7 +44,7 @@
     }
   })(root, null);
 
-  var state = {
+  const state = {
     view: 'outline',
     query: '',
     expanded: new Set(),
@@ -55,7 +55,7 @@
   // Two levels open by default: enough to read the shape of a site without
   // dumping thousands of rows on a large one.
   state.expanded.add(root.path);
-  for (var i = 0; i < root.children.length; i++) state.expanded.add(root.children[i].path);
+  for (let i = 0; i < root.children.length; i++) state.expanded.add(root.children[i].path);
 
   /* ---------- helpers ---------- */
 
@@ -64,11 +64,11 @@
   }
 
   function colorOf(depth) {
-    return 'var(--d' + (depth % DEPTH_COLORS) + ')';
+    return `var(--d${depth % DEPTH_COLORS})`;
   }
 
   function el(tag, cls, text) {
-    var node = document.createElement(tag);
+    const node = document.createElement(tag);
     if (cls) node.className = cls;
     if (text != null) node.textContent = text;
 
@@ -76,14 +76,14 @@
   }
 
   function svgEl(tag, attrs) {
-    var node = document.createElementNS('http://www.w3.org/2000/svg', tag);
-    for (var key in attrs) node.setAttribute(key, attrs[key]);
+    const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const key in attrs) node.setAttribute(key, attrs[key]);
 
     return node;
   }
 
   function chevron() {
-    var svg = svgEl('svg', { viewBox: '0 0 16 16', width: '10', height: '10' });
+    const svg = svgEl('svg', { viewBox: '0 0 16 16', width: '10', height: '10' });
     svg.appendChild(
       svgEl('path', {
         d: 'M6 3l5 5-5 5',
@@ -105,35 +105,35 @@
   }
 
   function tooltip(node) {
-    var lines = [node.entry ? node.entry.loc : node.path + '/'];
+    const lines = [node.entry ? node.entry.loc : `${node.path}/`];
     if (node.entry) {
-      if (node.entry.lastmod) lines.push('lastmod: ' + node.entry.lastmod);
-      if (node.entry.changefreq) lines.push('changefreq: ' + node.entry.changefreq);
-      if (node.entry.priority != null) lines.push('priority: ' + node.entry.priority);
-      if (node.entry.alts) lines.push('alternates: ' + node.entry.alts);
+      if (node.entry.lastmod) lines.push(`lastmod: ${node.entry.lastmod}`);
+      if (node.entry.changefreq) lines.push(`changefreq: ${node.entry.changefreq}`);
+      if (node.entry.priority != null) lines.push(`priority: ${node.entry.priority}`);
+      if (node.entry.alts) lines.push(`alternates: ${node.entry.alts}`);
     }
-    if (node.children.length) lines.push(num(node.count) + ' URLs below');
+    if (node.children.length) lines.push(`${num(node.count)} URLs below`);
 
     return lines.join('\n');
   }
 
   /* ---------- filtering ---------- */
 
-  var filter = null; /* { visible: Set, matched: Set } or null */
+  let filter = null; /* { visible: Set, matched: Set } or null */
 
   function computeFilter(query) {
-    var q = query ? query.toLowerCase() : null;
+    const q = query ? query.toLowerCase() : null;
     if (!q && !state.changesOnly) return null;
-    var visible = new Set();
-    var matched = new Set();
+    const visible = new Set();
+    const matched = new Set();
     (function walk(node) {
-      var hit = false;
-      for (var i = 0; i < node.children.length; i++) {
+      let hit = false;
+      for (let i = 0; i < node.children.length; i++) {
         if (walk(node.children[i])) hit = true;
       }
-      var self = true;
+      let self = true;
       if (q) {
-        var loc = node.entry ? node.entry.loc.toLowerCase() : '';
+        const loc = node.entry ? node.entry.loc.toLowerCase() : '';
         self = node.name.toLowerCase().indexOf(q) >= 0 || loc.indexOf(q) >= 0;
         if (self) matched.add(node.path);
       }
@@ -148,7 +148,7 @@
       return false;
     })(root);
 
-    return { visible: visible, matched: matched };
+    return { visible, matched };
   }
 
   function childrenOf(node) {
@@ -169,8 +169,8 @@
 
   /* ---------- outline view ---------- */
 
-  var outline = document.getElementById('outline');
-  var budget = 0;
+  const outline = document.getElementById('outline');
+  let budget = 0;
 
   function highlight(text, target) {
     if (!state.query) {
@@ -178,10 +178,10 @@
 
       return;
     }
-    var lower = text.toLowerCase();
-    var q = state.query.toLowerCase();
-    var from = 0;
-    var at = lower.indexOf(q, from);
+    const lower = text.toLowerCase();
+    const q = state.query.toLowerCase();
+    let from = 0;
+    let at = lower.indexOf(q, from);
     if (at < 0) {
       target.appendChild(document.createTextNode(text));
 
@@ -197,50 +197,50 @@
   }
 
   function buildRow(node) {
-    var kids = childrenOf(node);
-    var open = isOpen(node);
-    var row = el('div', 'row' + (kids.length ? ' has-children' : '') + (open ? ' open' : ''));
-    if (node.entry && node.entry.st) row.className += ' st-' + node.entry.st;
+    const kids = childrenOf(node);
+    const open = isOpen(node);
+    const row = el('div', `row${kids.length ? ' has-children' : ''}${open ? ' open' : ''}`);
+    if (node.entry && node.entry.st) row.className += ` st-${node.entry.st}`;
     if (filter && filter.matched.has(node.path)) row.className += ' match';
     row.dataset.path = node.path;
     row.title = tooltip(node);
 
-    var twisty = el('span', 'twisty' + (kids.length ? '' : ' leaf'));
+    const twisty = el('span', `twisty${kids.length ? '' : ' leaf'}`);
     twisty.appendChild(chevron());
     row.appendChild(twisty);
 
-    var dot = el('span', 'dot' + (node.entry ? '' : ' hollow'));
+    const dot = el('span', `dot${node.entry ? '' : ' hollow'}`);
     // In a diff the palette belongs to the statuses; depth colours would read
     // as statuses too, and at depth 2 the depth green is the "added" green.
     dot.style.color = DATA.diff ? 'var(--text-faint)' : colorOf(node.depth);
     row.appendChild(dot);
 
-    var label = el('span', 'label');
+    const label = el('span', 'label');
     highlight(node.name, label);
     row.appendChild(label);
 
     if (node.count > 1 || kids.length) row.appendChild(el('span', 'badge', num(node.count)));
-    if (node.dupes) row.appendChild(el('span', 'badge', '×' + (node.dupes + 1)));
-    if (node.truncated) row.appendChild(el('span', 'badge', '+' + num(node.truncated) + ' deeper'));
+    if (node.dupes) row.appendChild(el('span', 'badge', `×${node.dupes + 1}`));
+    if (node.truncated) row.appendChild(el('span', 'badge', `+${num(node.truncated)} deeper`));
 
     if (DATA.diff && kids.length && node.delta && (node.delta.a || node.delta.r || node.delta.c)) {
-      var delta = el('span', 'delta');
-      if (node.delta.a) delta.appendChild(el('span', 'plus', '+' + num(node.delta.a)));
-      if (node.delta.r) delta.appendChild(el('span', 'minus', '−' + num(node.delta.r)));
-      if (node.delta.c) delta.appendChild(el('span', 'tilde', '~' + num(node.delta.c)));
+      const delta = el('span', 'delta');
+      if (node.delta.a) delta.appendChild(el('span', 'plus', `+${num(node.delta.a)}`));
+      if (node.delta.r) delta.appendChild(el('span', 'minus', `−${num(node.delta.r)}`));
+      if (node.delta.c) delta.appendChild(el('span', 'tilde', `~${num(node.delta.c)}`));
       row.appendChild(delta);
     }
 
-    var meta = el('span', 'meta');
+    const meta = el('span', 'meta');
     if (node.entry && node.entry.lastmod) {
       meta.appendChild(el('span', null, shortDate(node.entry.lastmod)));
     }
     if (node.entry) {
-      var link = el('a', 'open-link', '↗');
+      const link = el('a', 'open-link', '↗');
       link.href = node.entry.loc;
       link.target = '_blank';
       link.rel = 'noreferrer noopener';
-      link.title = 'Open ' + node.entry.loc;
+      link.title = `Open ${node.entry.loc}`;
       link.addEventListener('click', function (event) {
         event.stopPropagation();
       });
@@ -262,13 +262,13 @@
     into.appendChild(buildRow(node));
     if (!isOpen(node)) return;
 
-    var kids = childrenOf(node);
-    var box = el('div', 'children');
-    var limit = state.shown.get(node.path) || CHILD_PAGE;
-    for (var i = 0; i < Math.min(kids.length, limit); i++) renderNode(kids[i], box);
+    const kids = childrenOf(node);
+    const box = el('div', 'children');
+    const limit = state.shown.get(node.path) || CHILD_PAGE;
+    for (let i = 0; i < Math.min(kids.length, limit); i++) renderNode(kids[i], box);
     if (kids.length > limit) {
-      var rest = kids.length - limit;
-      var more = el('div', 'more', '+ ' + num(rest) + ' more — click to show');
+      const rest = kids.length - limit;
+      const more = el('div', 'more', `+ ${num(rest)} more — click to show`);
       more.style.cursor = 'pointer';
       more.addEventListener('click', function () {
         state.shown.set(node.path, limit + CHILD_PAGE);
@@ -283,14 +283,14 @@
     outline.textContent = '';
     budget = ROW_BUDGET;
     if (filter && !filter.visible.size) {
-      outline.appendChild(el('div', 'empty', 'Nothing matches "' + state.query + '"'));
+      outline.appendChild(el('div', 'empty', `Nothing matches "${state.query}"`));
 
       return;
     }
     renderNode(root, outline);
     if (budget <= 0) {
       outline.appendChild(
-        el('div', 'more', 'Output truncated at ' + num(ROW_BUDGET) + ' rows — narrow the search.'),
+        el('div', 'more', `Output truncated at ${num(ROW_BUDGET)} rows — narrow the search.`),
       );
     }
   }
@@ -304,29 +304,29 @@
 
   /* ---------- graph view ---------- */
 
-  var graph = document.getElementById('graph');
-  var svg = svgEl('svg', { xmlns: 'http://www.w3.org/2000/svg' });
-  var viewport = svgEl('g', {});
+  const graph = document.getElementById('graph');
+  const svg = svgEl('svg', { xmlns: 'http://www.w3.org/2000/svg' });
+  const viewport = svgEl('g', {});
   svg.appendChild(viewport);
   graph.appendChild(svg);
 
-  var transform = { x: 40, y: 40, k: 1 };
-  var fitted = false;
-  var DX = 200;
-  var DY = 22;
+  const transform = { x: 40, y: 40, k: 1 };
+  let fitted = false;
+  const DX = 200;
+  const DY = 22;
 
   function layout() {
-    var nodes = [];
-    var links = [];
-    var cursor = 0;
+    const nodes = [];
+    const links = [];
+    let cursor = 0;
     (function walk(node, depth) {
-      var kids = isOpen(node) ? childrenOf(node) : [];
-      var item = { node: node, x: depth * DX, y: 0, open: kids.length > 0 };
+      const kids = isOpen(node) ? childrenOf(node) : [];
+      const item = { node, x: depth * DX, y: 0, open: kids.length > 0 };
       if (kids.length) {
-        var first = null;
-        var last = null;
-        for (var i = 0; i < kids.length; i++) {
-          var child = walk(kids[i], depth + 1);
+        let first = null;
+        let last = null;
+        for (let i = 0; i < kids.length; i++) {
+          const child = walk(kids[i], depth + 1);
           links.push({ from: item, to: child });
           if (first === null) first = child.y;
           last = child.y;
@@ -340,59 +340,43 @@
       return item;
     })(root, 0);
 
-    return { nodes: nodes, links: links };
+    return { nodes, links };
   }
 
   function applyTransform() {
     viewport.setAttribute(
       'transform',
-      'translate(' + transform.x + ',' + transform.y + ') scale(' + transform.k + ')',
+      `translate(${transform.x},${transform.y}) scale(${transform.k})`,
     );
   }
 
   function renderGraph() {
-    var model = layout();
+    const model = layout();
     viewport.textContent = '';
 
-    var linkLayer = svgEl('g', {});
-    for (var i = 0; i < model.links.length; i++) {
-      var a = model.links[i].from;
-      var b = model.links[i].to;
-      var mid = (a.x + b.x) / 2;
+    const linkLayer = svgEl('g', {});
+    for (let i = 0; i < model.links.length; i++) {
+      const a = model.links[i].from;
+      const b = model.links[i].to;
+      const mid = (a.x + b.x) / 2;
       linkLayer.appendChild(
         svgEl('path', {
           class: 'link',
-          d:
-            'M' +
-            a.x +
-            ',' +
-            a.y +
-            'C' +
-            mid +
-            ',' +
-            a.y +
-            ' ' +
-            mid +
-            ',' +
-            b.y +
-            ' ' +
-            b.x +
-            ',' +
-            b.y,
+          d: `M${a.x},${a.y}C${mid},${a.y} ${mid},${b.y} ${b.x},${b.y}`,
         }),
       );
     }
     viewport.appendChild(linkLayer);
 
-    for (var j = 0; j < model.nodes.length; j++) {
-      var item = model.nodes[j];
-      var node = item.node;
-      var g = svgEl('g', {
-        class: 'node' + (filter && filter.matched.has(node.path) ? ' match' : ''),
-        transform: 'translate(' + item.x + ',' + item.y + ')',
+    for (let j = 0; j < model.nodes.length; j++) {
+      const item = model.nodes[j];
+      const node = item.node;
+      const g = svgEl('g', {
+        class: `node${filter && filter.matched.has(node.path) ? ' match' : ''}`,
+        transform: `translate(${item.x},${item.y})`,
       });
 
-      var circle = svgEl('circle', {
+      const circle = svgEl('circle', {
         r: node.children.length ? 4.5 : 3,
         fill: item.open ? 'var(--bg-panel)' : colorOf(node.depth),
         stroke: colorOf(node.depth),
@@ -401,24 +385,24 @@
 
       // An unfolded node sits at the mouth of its own edges, so its label goes
       // on the outside; everything else reads left to right.
-      var name = node.name.length > 28 ? node.name.slice(0, 27) + '…' : node.name;
-      var text = svgEl('text', {
+      const name = node.name.length > 28 ? `${node.name.slice(0, 27)}…` : node.name;
+      const text = svgEl('text', {
         x: item.open ? -9 : 9,
         y: 0,
         'text-anchor': item.open ? 'end' : 'start',
       });
-      var main = svgEl('tspan', {});
+      const main = svgEl('tspan', {});
       main.textContent = name;
       text.appendChild(main);
 
       if (node.children.length && !item.open) {
-        var count = svgEl('tspan', { class: 'count' });
-        count.textContent = '  ' + num(node.count);
+        const count = svgEl('tspan', { class: 'count' });
+        count.textContent = `  ${num(node.count)}`;
         text.appendChild(count);
       }
       g.appendChild(text);
 
-      var title = svgEl('title', {});
+      const title = svgEl('title', {});
       title.textContent = tooltip(node);
       g.appendChild(title);
 
@@ -442,22 +426,26 @@
 
   /** Fit to the rendered bounding box so labels never hang off an edge. */
   function fit() {
-    var bbox;
+    let bbox;
     try {
       bbox = viewport.getBBox();
     } catch (err) {
       return;
     }
     if (!bbox.width || !bbox.height) return;
-    var box = graph.getBoundingClientRect();
-    var pad = 28;
-    var k = Math.min((box.width - pad * 2) / bbox.width, (box.height - pad * 2) / bbox.height, 1.2);
+    const box = graph.getBoundingClientRect();
+    const pad = 28;
+    const k = Math.min(
+      (box.width - pad * 2) / bbox.width,
+      (box.height - pad * 2) / bbox.height,
+      1.2,
+    );
     transform.k = Math.max(0.05, k);
     transform.x = pad - bbox.x * transform.k;
     transform.y = (box.height - bbox.height * transform.k) / 2 - bbox.y * transform.k;
   }
 
-  var panning = null;
+  let panning = null;
   graph.addEventListener('pointerdown', function (event) {
     if (event.target.closest('.node')) return;
     panning = { x: event.clientX - transform.x, y: event.clientY - transform.y };
@@ -485,11 +473,11 @@
     'wheel',
     function (event) {
       event.preventDefault();
-      var box = graph.getBoundingClientRect();
-      var px = event.clientX - box.left;
-      var py = event.clientY - box.top;
-      var factor = Math.exp(-event.deltaY * 0.0015);
-      var next = Math.max(0.05, Math.min(4, transform.k * factor));
+      const box = graph.getBoundingClientRect();
+      const px = event.clientX - box.left;
+      const py = event.clientY - box.top;
+      const factor = Math.exp(-event.deltaY * 0.0015);
+      const next = Math.max(0.05, Math.min(4, transform.k * factor));
       // Keep the point under the cursor pinned while the scale changes.
       transform.x = px - ((px - transform.x) * next) / transform.k;
       transform.y = py - ((py - transform.y) * next) / transform.k;
@@ -516,8 +504,8 @@
     render();
   }
 
-  var input = document.getElementById('q');
-  var debounce;
+  const input = document.getElementById('q');
+  let debounce;
   input.addEventListener('input', function () {
     clearTimeout(debounce);
     debounce = setTimeout(function () {
@@ -543,7 +531,7 @@
     setView('graph');
   });
 
-  var changesButton = document.getElementById('changes');
+  const changesButton = document.getElementById('changes');
   if (changesButton) {
     changesButton.hidden = !DATA.diff;
     changesButton.addEventListener('click', function () {
@@ -561,7 +549,7 @@
   });
 
   document.getElementById('expand').addEventListener('click', function () {
-    var count = 0;
+    let count = 0;
     byPath.forEach(function (node, path) {
       if (node.children.length && count++ < 20000) state.expanded.add(path);
     });
@@ -574,22 +562,22 @@
     render();
   });
 
-  var themes = ['auto', 'light', 'dark'];
-  var themeIcons = { auto: '◑', light: '☀', dark: '☽' };
-  var stored = null;
+  const themes = ['auto', 'light', 'dark'];
+  const themeIcons = { auto: '◑', light: '☀', dark: '☽' };
+  let stored = null;
   try {
     stored = localStorage.getItem('sitemap-atlas-theme');
   } catch (err) {
     stored = null;
   }
-  var theme = themes.indexOf(stored) >= 0 ? stored : 'auto';
-  var themeButton = document.getElementById('theme');
+  let theme = themes.indexOf(stored) >= 0 ? stored : 'auto';
+  const themeButton = document.getElementById('theme');
 
   function applyTheme() {
     if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', theme);
     themeButton.textContent = themeIcons[theme];
-    themeButton.title = 'Theme: ' + theme;
+    themeButton.title = `Theme: ${theme}`;
   }
   themeButton.addEventListener('click', function () {
     theme = themes[(themes.indexOf(theme) + 1) % themes.length];

@@ -159,10 +159,11 @@ export class SitemapPanel {
       this.panel.webview.html = renderForWebview(result, this.source);
       if (result.sitemap.errors.length) {
         void vscode.window.showWarningMessage(
-          `${result.sitemap.errors.length} nested sitemap(s) could not be read. ` +
-            (this.source.kind === 'file'
+          `${result.sitemap.errors.length} nested sitemap(s) could not be read. ${
+            this.source.kind === 'file'
               ? 'Enable sitemapAtlas.allowNetwork to fetch remote children.'
-              : ''),
+              : ''
+          }`,
         );
       }
     } catch (error) {

@@ -223,9 +223,9 @@ async function main(): Promise<void> {
     if (!values.quiet) {
       const { added, removed, changed } = diff.summary;
       process.stderr.write(
-        `  vs ${values.against}: +${added} added, -${removed} removed` +
-          (values.lastmod ? `, ~${changed} changed` : '') +
-          '\n',
+        `  vs ${values.against}: +${added} added, -${removed} removed${
+          values.lastmod ? `, ~${changed} changed` : ''
+        }\n`,
       );
     }
   }

@@ -93,9 +93,9 @@ export function parseSitemap(xml: string, source?: string): ParsedDocument {
         }
         if (name === 'link') {
           const attrs = attributes();
-          const rel = attrs['rel'];
-          const hreflang = attrs['hreflang'];
-          const href = attrs['href'];
+          const rel = attrs.rel;
+          const hreflang = attrs.hreflang;
+          const href = attrs.href;
           if ((rel === undefined || rel === 'alternate') && hreflang && href) {
             (entry.alternates ??= []).push({ hreflang, href });
           }

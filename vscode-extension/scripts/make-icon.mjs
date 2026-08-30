@@ -69,7 +69,14 @@ function glyph(x, y) {
   for (const points of LINKS) {
     let best = Infinity;
     for (let i = 1; i < points.length; i++) {
-      const d = segmentDistance(x, y, points[i - 1][0], points[i - 1][1], points[i][0], points[i][1]);
+      const d = segmentDistance(
+        x,
+        y,
+        points[i - 1][0],
+        points[i - 1][1],
+        points[i][0],
+        points[i][1],
+      );
       if (d < best) best = d;
     }
     cover = Math.max(cover, clamp01(1.5 - (best - 3.6)));
