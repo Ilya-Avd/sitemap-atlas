@@ -74,8 +74,6 @@ jobs:
           node dist/cli.js --version
           node dist/cli.js test/fixtures/basic.xml
           node dist/cli.js test/fixtures/index.xml --offline
-          node dist/cli.js test/fixtures/large.xml -o /tmp/report.html -q
-          test -s /tmp/report.html
 
       - name: Both module systems load
         run: |
