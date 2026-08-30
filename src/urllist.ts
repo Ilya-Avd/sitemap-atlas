@@ -25,6 +25,7 @@ function contentLines(text: string): string[] {
     const line = raw.trim();
     if (line && !COMMENT.test(line)) out.push(line);
   }
+
   return out;
 }
 
@@ -40,6 +41,7 @@ export function looksLikeUrlList(text: string): boolean {
   const lines = contentLines(text);
   if (!lines.length) return false;
   const urls = lines.filter(isHttpUrl).length;
+
   return urls > 0 && urls / lines.length > 0.5;
 }
 
@@ -55,5 +57,6 @@ export function parseUrlList(text: string, source?: string): SitemapEntry[] {
     if (!isHttpUrl(loc)) continue;
     entries.push(source ? { loc, source } : { loc });
   }
+
   return entries;
 }

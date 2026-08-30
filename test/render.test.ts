@@ -62,6 +62,7 @@ describe('renderMermaid', () => {
 describe('renderHtml', () => {
   const html = () => {
     const tree = sample();
+
     return renderHtml(tree, summarize(tree), { source: 'sitemap.xml', now: new Date(0) });
   };
 

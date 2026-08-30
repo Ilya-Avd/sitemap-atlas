@@ -29,6 +29,7 @@ export function parseRobots(text: string): string[] {
     const match = /^\s*sitemap\s*:\s*(\S+)/i.exec(line);
     if (match?.[1]) found.push(match[1]);
   }
+
   return [...new Set(found)];
 }
 
@@ -52,6 +53,7 @@ export function sameSite(origin: string, target: string): boolean {
   } catch {
     return false;
   }
+
   return a === b || a.endsWith(`.${b}`) || b.endsWith(`.${a}`);
 }
 

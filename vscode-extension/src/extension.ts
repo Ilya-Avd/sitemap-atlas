@@ -6,6 +6,7 @@ import type { Source } from './panel.js';
 function targetUri(argument?: vscode.Uri): vscode.Uri | undefined {
   if (argument instanceof vscode.Uri) return argument;
   const active = vscode.window.activeTextEditor?.document.uri;
+
   return active?.path.toLowerCase().endsWith('.xml') ? active : undefined;
 }
 
@@ -25,6 +26,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const uri = targetUri(argument);
       if (!uri) {
         void vscode.window.showInformationMessage('Open a sitemap .xml file first.');
+
         return;
       }
       await SitemapPanel.show({ kind: 'file', uri });
@@ -39,6 +41,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const uri = targetUri(argument);
       if (!uri) {
         void vscode.window.showInformationMessage('Open a sitemap .xml file first.');
+
         return;
       }
       const source: Source = { kind: 'file', uri };

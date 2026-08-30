@@ -78,5 +78,6 @@ export function diffSitemaps(
   }
 
   summary.removedShare = previous.size ? summary.removed / previous.size : 0;
+
   return { entries, summary };
 }

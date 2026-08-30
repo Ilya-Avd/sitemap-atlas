@@ -11,6 +11,7 @@ const at = (node: TreeNode, ...path: string[]): TreeNode => {
     if (!next) throw new Error(`no child "${name}" under ${current.path}`);
     current = next;
   }
+
   return current;
 };
 

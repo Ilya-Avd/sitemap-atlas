@@ -32,6 +32,7 @@ const NAMED_ENTITIES: Record<string, string> = {
 /** Decode the entity references XML defines without a DTD. */
 export function decodeEntities(input: string): string {
   if (input.indexOf('&') < 0) return input;
+
   return input.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (whole, body: string) => {
     if (body[0] === '#') {
       const code =
@@ -41,8 +42,10 @@ export function decodeEntities(input: string): string {
       // Lone surrogates and out-of-range values would corrupt the string.
       if (!Number.isFinite(code) || code < 0 || code > 0x10ffff) return whole;
       if (code >= 0xd800 && code <= 0xdfff) return whole;
+
       return String.fromCodePoint(code);
     }
+
     return NAMED_ENTITIES[body] ?? whole;
   });
 }
@@ -50,6 +53,7 @@ export function decodeEntities(input: string): string {
 /** `image:loc` and `loc` are the same element as far as a sitemap reader cares. */
 const stripPrefix = (name: string): string => {
   const colon = name.indexOf(':');
+
   return colon < 0 ? name : name.slice(colon + 1);
 };
 
@@ -64,6 +68,7 @@ function parseAttributes(source: string): Record<string, string> {
       (match[3] ?? match[4] ?? '') as string,
     );
   }
+
   return attributes;
 }
 
@@ -142,6 +147,7 @@ export function scanXml(xml: string, handler: XmlHandler): void {
     if (end < 0) {
       // An unterminated tag is not text; stop rather than emit '<b' as content.
       flushText(open);
+
       return;
     }
     flushText(open);

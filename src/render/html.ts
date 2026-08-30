@@ -73,6 +73,7 @@ function toWire(node: TreeNode, parentPath: string | null): WireNode {
   if (node.children.length) {
     wire.children = node.children.map((child) => toWire(child, node.path));
   }
+
   return wire;
 }
 
@@ -124,6 +125,7 @@ function chips(stats: TreeStats, options: HtmlOptions): string {
       ),
     );
   }
+
   return out.join('\n      ');
 }
 

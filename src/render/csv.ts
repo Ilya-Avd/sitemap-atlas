@@ -14,6 +14,7 @@ function cell(value: string | number | undefined, delimiter: string): string {
   if (value === undefined) return '';
   const text = String(value);
   if (!text.includes(delimiter) && !/["\n\r]/.test(text)) return text;
+
   return `"${text.replace(/"/g, '""')}"`;
 }
 
@@ -52,5 +53,6 @@ export function renderCsv(root: TreeNode, options: CsvOptions = {}): string {
   };
 
   visit(root);
+
   return rows.join('\n');
 }

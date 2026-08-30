@@ -39,6 +39,7 @@ const vscode = {
   commands: {
     registerCommand: (id, handler) => {
       commands.set(id, handler);
+
       return { dispose() {} };
     },
   },
@@ -57,20 +58,24 @@ const vscode = {
         },
       };
       panels.push(panel);
+
       return panel;
     },
     withProgress: (_options, task) => task(),
     showInputBox: async () => undefined,
     showInformationMessage: async (m) => {
       messages.info.push(m);
+
       return undefined;
     },
     showWarningMessage: async (m) => {
       messages.warn.push(m);
+
       return undefined;
     },
     showErrorMessage: async (m) => {
       messages.error.push(m);
+
       return undefined;
     },
     showSaveDialog: async () => undefined,
@@ -87,6 +92,7 @@ const vscode = {
 const load = Module._load;
 Module._load = function (request, ...rest) {
   if (request === 'vscode') return vscode;
+
   return load.apply(this, [request, ...rest]);
 };
 

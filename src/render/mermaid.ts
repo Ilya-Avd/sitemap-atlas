@@ -35,6 +35,7 @@ export function renderMermaid(root: TreeNode, options: MermaidOptions = {}): str
       value = `n${ids.size}`;
       ids.set(node.path, value);
     }
+
     return value;
   };
 
@@ -49,6 +50,7 @@ export function renderMermaid(root: TreeNode, options: MermaidOptions = {}): str
   const walk = (node: TreeNode): void => {
     if (node.depth >= maxDepth) {
       dropped += node.count - (node.entry ? 1 : 0);
+
       return;
     }
     for (const child of node.children) {
@@ -69,5 +71,6 @@ export function renderMermaid(root: TreeNode, options: MermaidOptions = {}): str
     lines.push(`  classDef d${tone} stroke:${PALETTE[tone]},stroke-width:1.5px;`);
   }
   if (dropped > 0) lines.push(`  %% ${dropped} URLs omitted by maxDepth/maxNodes`);
+
   return lines.join('\n');
 }
