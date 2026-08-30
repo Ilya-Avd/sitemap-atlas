@@ -4,6 +4,10 @@ Thanks for taking a look. Issues and pull requests are welcome.
 
 ## Getting set up
 
+Development needs **Node 20 or newer** — vitest does not run on 18. The
+published package has a lower floor, `engines.node`, and CI checks that
+separately by running the built artifact on it.
+
 ```bash
 npm install          # also generates src/render/assets.generated.ts
 npm test

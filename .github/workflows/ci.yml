@@ -19,13 +19,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The development toolchain and the published package have different floors:
+  # vitest needs Node 20, while the package itself only needs parseArgs and
+  # fetch. Running the suite on an older Node would test the toolchain, not the
+  # product, so the floor is verified separately by `runtime-floor` below.
   library:
     name: library · node ${{ matrix.node }} · ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        node: ['18.17', '20', '22', '24']
+        node: ['20', '22', '24']
         os: [ubuntu-latest]
         include:
           # The CLI writes files, spawns itself and reads sockets; Windows has
@@ -43,6 +47,40 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  # `engines.node` is a promise to whoever installs the package. It is kept by
+  # building on a current Node and then running the built artifact on the oldest
+  # one claimed — which is what a user on that version actually gets.
+  runtime-floor:
+    name: runs on the oldest supported node
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      - name: Switch to the floor declared in engines.node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.17'
+
+      - name: The CLI runs
+        run: |
+          node --version
+          node dist/cli.js --version
+          node dist/cli.js test/fixtures/basic.xml
+          node dist/cli.js test/fixtures/index.xml --offline
+          node dist/cli.js test/fixtures/large.xml -o /tmp/report.html -q
+          test -s /tmp/report.html
+
+      - name: Both module systems load
+        run: |
+          node -e "const a=require('./dist/index.cjs'); if(!a.buildTree) throw new Error('cjs export missing')"
+          node --input-type=module -e "import('./dist/index.js').then(m => { if (!m.buildTree) throw new Error('esm export missing') })"
 
   extension:
     name: vscode extension
